@@ -81,24 +81,6 @@ function render!(renderer::Renderer, domain::Domain, state::State, extras...)
     render!(current_canvas(renderer), domain, state, extras...)
 end
 
-"Renders a goal, task, or reward specification to an existing `canvas`."
-function render_spec!(canvas::Canvas, renderer::Renderer,
-                      domain::Domain, state::State, spec)
-    error("Not implemented.")
-end
-
-render_spec!(canvas::Canvas, renderer::Renderer, spec) =
-    render_spec!(canvas, renderer, get_domain(canvas), get_state(canvas), spec)
-
-"Renders a task solution (e.g. plan or policy) to an existing `canvas`."
-function render_sol!(canvas::Canvas, renderer::Renderer,
-                     domain::Domain, state::State, sol)
-    error("Not implemented.")
-end
-
-render_sol!(canvas::Canvas, renderer::Renderer, sol) =
-    render_sol!(canvas, renderer, get_domain(canvas), get_state(canvas), sol)
-
 "Renders an `object` in the PDDL state associated with a `canvas`."
 function render_object!(canvas::Canvas, renderer::Renderer,
                         domain::Domain, state::State, object::Const)
