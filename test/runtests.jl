@@ -1,6 +1,5 @@
 using RenderPDDL
+using PDDL
 using Test
 
-@testset "RenderPDDL.jl" begin
-    # Write your tests here.
-end
+include("gridworld.jl")
