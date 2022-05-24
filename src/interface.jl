@@ -25,10 +25,10 @@ object (e.g. a Plots.jl `Plot` or Makie.jl `Figure`), the associated PDDL
 abstract type Canvas end
 
 "Returns the PDDL [`Domain`](@ref) associated with the `canvas`."
-get_domain(canvas::Canvas) = canvas.domain
+get_domain(canvas::Canvas) = error("Not implemented.")
 
 "Returns the PDDL [`State`](@ref) associated with the `canvas`."
-get_state(canvas::Canvas) = canvas.state
+get_state(canvas::Canvas) = error("Not implemented.")
 
 """
     GenericCanvas{T}
