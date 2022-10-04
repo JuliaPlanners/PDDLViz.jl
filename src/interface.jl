@@ -30,6 +30,16 @@ get_domain(canvas::Canvas) = error("Not implemented.")
 "Returns the PDDL [`State`](@ref) associated with the `canvas`."
 get_state(canvas::Canvas) = error("Not implemented.")
 
+
+"""
+    Sprite
+
+    A `Sprite` is a mutable container for renderable sprites produced by a
+    [`Renderer`](@ref), typically consisting of a reference to the image to
+    be rendered to a Canvas.
+"""
+abstract type Sprite end
+
 """
     GenericCanvas{T}
 
