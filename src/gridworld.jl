@@ -1,5 +1,6 @@
 # Import shape constructors for convenience
 import Makie.GeometryBasics: Circle, Point2f
+using GLMakie, FileIO
 
 "Customizable renderer for 2D gridworld domains."
 @kwdef mutable struct GridworldRenderer <: Renderer
@@ -9,6 +10,16 @@ import Makie.GeometryBasics: Circle, Point2f
     agent_y = pddl"ypos"
     obj_x = obj -> Compound(:xloc, [obj])
     obj_y = obj -> Compound(:yloc, [obj])
+    sprites = Dict{Symbol, Any}(:default => load("/Users/nathaliefernandez/Documents/Projects/RenderPDDL.jl/cow.png"))
+end
+
+@kwdef mutable struct GridworldSprite <: Sprite
+    img = rotr90(load("/Users/nathaliefernandez/Documents/Projects/RenderPDDL.jl/cow.png"))
+end
+
+function add_sprite!(renderer::GridworldRenderer, domain::Domain, state::State, obj::Symbol)
+    renderer.sprites[obj] = load("/Users/nathaliefernandez/Documents/Projects/RenderPDDL.jl/cow.png")
+    return nothing
 end
 
 current_canvas(renderer::GridworldRenderer) = error("Not implemented.")
@@ -46,17 +57,24 @@ function render!(canvas::Canvas, renderer::GridworldRenderer,
     ax.xgridstyle, ax.ygridstyle = :dash, :dash
     # Iterate over objects and render them
     if renderer.show_objects
+
         for obj in PDDL.get_objects(state)
             render_object!(canvas, renderer, domain, state, obj)
         end
     end
+
     # Render agent
     if renderer.show_agent
         # Look-up agent position from PDDL state
         x = state[renderer.agent_x]
         y = height - state[renderer.agent_y] + 1 # Flip y-coordinate
-        agent_shape = Circle(Point2f(x, y), 0.2)
-        Makie.poly!(ax, agent_shape, color=:red)
+        if :agent in PDDL.get_objects(state)
+            img = renderer.sprites[PDDL.get_objtypes(state)[:agent]]
+            image!([x-0.5, x+0.5], [y-0.5, y+0.5], img)
+        else
+            agent_shape = Circle(Point2f(x, y), 0.2)
+            Makie.poly!(ax, agent_shape, color=:red)
+        end
     end
     # Return the canvas
     return canvas
@@ -72,22 +90,21 @@ function render_object!(canvas::Canvas, renderer::GridworldRenderer,
     # Check if object should be plotted based on whether it is picked up / unlocked
     x = state[renderer.obj_x(object)]
     y = height - state[renderer.obj_y(object)] + 1 # Flip y-coordinate
-    obj_shape = Circle(Point2f(x, y), 0.1)
-    Makie.poly!(ax, obj_shape)
+
+
+    if in(object, values(PDDL.get_objtypes(state)))
+        img = renderer.sprites[PDDL.get_objtypes(state)[object]]
+        image!([x-0.5, x+0.5], [y-0.5, y+0.5], img)
+    else
+        obj_shape = Circle(Point2f(x, y), 0.1)
+        Makie.poly!(ax, obj_shape)
+    end
     return canvas
 end
 
 function animate!(
     canvas::Canvas, renderer::GridworldRenderer,
     domain::Domain, state1::State, state2::State, action=nothing;
-    n_steps=nothing, step_dur=nothing, record=false
-)
-    error("Not implemented.")
-end
-
-function animate!(
-    canvas::Canvas, renderer::GridworldRenderer,
-    domain::Domain, states::AbstractVector{<:State}, actions=nothing;
     n_steps=nothing, step_dur=nothing, record=false
 )
     error("Not implemented.")

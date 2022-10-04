@@ -1,8 +1,9 @@
 # Test gridworld rendering
-using RenderPDDL, PDDL, Test
+using RenderPDDL, PDDL, Test, GLMakie, FileIO
 
 # Load example gridworld domain and problem
 path = joinpath(dirname(pathof(RenderPDDL)), "..", "test", "gridworld")
+
 domain = load_domain(joinpath(path, "domain.pddl"))
 problem = load_problem(joinpath(path, "problem.pddl"))
 
@@ -15,5 +16,9 @@ state = initstate(domain, problem)
 # Construct gridworld renderer
 renderer = RenderPDDL.GridworldRenderer()
 
+add_sprite!(renderer, domain, state, :key)
+add_sprite!(renderer, domain, state, :door)
+add_sprite!(renderer, domain, state, :gem)
+add_sprite!(renderer, domain, state, :agent)
 # Render initial state
 canvas = render(renderer, domain, state)
