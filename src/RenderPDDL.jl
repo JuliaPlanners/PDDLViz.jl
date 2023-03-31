@@ -1,15 +1,19 @@
 module RenderPDDL
 
-export render!, render, add_sprite!
-export new_canvas, current_canvas
-
 using Base: @kwdef
+
 using PDDL
-using FileIO
-import Makie, CairoMakie
-import GLMakie: assetpath
+using GLMakie, Makie
+using Makie: Block
+
+using DocStringExtensions
+
+const MaybeObservable{T} = Union{Observable{T}, T}
+maybe_observe(x::Observable) = x
+maybe_observe(x) = Observable(x)
 
 include("interface.jl")
+include("graphics/graphics.jl")
 include("gridworld.jl")
 
 end

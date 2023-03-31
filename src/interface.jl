@@ -1,3 +1,35 @@
+export Canvas, Renderer
+export render_state, render_plan, render_trajectory
+export render_state!, render_plan!, render_trajectory!
+
+"""
+    Canvas
+
+A `Canvas` is a mutable container for renderable outputs produced by a
+[`Renderer`](@ref), consisting of a reference to the figure and axis blocks
+on which the output is rendered, the PDDL [`State`](@ref) that the output is
+based on, and a dictionary of additional `Observable`s.
+"""
+mutable struct Canvas
+    figure::Figure
+    blocks::Vector{Block}
+    state::Union{Nothing,Observable}
+    observables::Dict{Symbol,Observable}
+end
+
+Canvas(figure::Figure) =
+    Canvas(figure, Block[], nothing, Dict{Symbol,Observable}())
+Canvas(figure::Figure, axis::Block) =
+    Canvas(figure, Block[axis], nothing, Dict{Symbol,Observable}())
+Canvas(figure::Figure, blocks::Vector) =
+    Canvas(figure, blocks, nothing, Dict{Symbol,Observable}())
+Canvas(figure::Figure, blocks::Vector, state::State) =
+    Canvas(figure, blocks, Observable(state), Dict{Symbol,Observable}())
+Canvas(figure::Figure, blocks::Vector, state::Observable{<:State}) =
+    Canvas(figure, blocks, state, Dict{Symbol,Observable}())
+
+Base.display(canvas::Canvas; kwargs...) = display(canvas.figure; kwargs...)
+
 """
     Renderer
 
@@ -8,120 +40,179 @@ wish to visualize that domain.
 """
 abstract type Renderer end
 
-"Returns the current [`Canvas`](@ref) used by `renderer`."
-current_canvas(renderer::Renderer) = error("Not implemented.")
-
-"Returns a new [`Canvas`](@ref) to be used by `renderer`."
-new_canvas(renderer::Renderer) = error("Not implemented.")
-
-"""
-    Canvas
-
-A `Canvas` is a mutable container for renderable outputs produced by a
-[`Renderer`](@ref), typically consisting of a reference to the actual front-end
-object (e.g. a Plots.jl `Plot` or Makie.jl `Figure`), the associated PDDL
-[`Domain`](@ref) and [`State`](@ref), and any other stateful information.
-"""
-abstract type Canvas end
-
-"Returns the PDDL [`Domain`](@ref) associated with the `canvas`."
-get_domain(canvas::Canvas) = error("Not implemented.")
-
-"Returns the PDDL [`State`](@ref) associated with the `canvas`."
-get_state(canvas::Canvas) = error("Not implemented.")
-
-
-"""
-    Sprite
-
-    A `Sprite` is a mutable container for renderable sprites produced by a
-    [`Renderer`](@ref), typically consisting of a reference to the image to
-    be rendered to a Canvas.
-"""
-abstract type Sprite end
-
-"""
-    GenericCanvas{T}
-
-A generic `Canvas` containing an `output` object of type `T`
-(e.g. a Plots.jl `Plot` or Makie.jl `Figure`), the `domain` and `state` being
-rendered, and dictionary of extra properties (`extras`).
-"""
-mutable struct GenericCanvas{T} <: Canvas
-    output::T
-    domain::Union{Domain,Nothing}
-    state::Union{State,Nothing}
-    extras::Dict
+function (r::Renderer)(
+    domain::Domain, state::MaybeObservable{<:State}
+)
+    return render_state(r, domain, state)
 end
 
-GenericCanvas(output) = GenericCanvas(output, nothing, nothing, Dict())
+function (r::Renderer)(
+    domain::Domain, state::MaybeObservable{<:State},
+    actions::MaybeObservable{<:AbstractVector{<:Term}}
+)
+    return render_plan(r, domain, state, actions)
+end
 
-get_domain(canvas::GenericCanvas) = canvas.domain
+function (r::Renderer)(
+    domain::Domain, trajectory::MaybeObservable{AbstractVector{<:State}}
+)
+    return render_trajectory(r, domain, trajectory)
+end
 
-get_state(canvas::GenericCanvas) = canvas.state
+function (r::Renderer)(
+    canvas::Canvas, 
+    domain::Domain, state::MaybeObservable{<:State}
+)
+    return render_state!(canvas, r, domain, state)
+end
 
-Base.showable(m::MIME"text/plain", canvas::GenericCanvas) = true
+function (r::Renderer)(
+    canvas::Canvas, 
+    domain::Domain, state::MaybeObservable{<:State},
+    actions::MaybeObservable{<:AbstractVector{<:Term}}
+)
+    return render_plan!(canvas, r, domain, state, actions)
+end
 
-Base.showable(m::MIME, canvas::GenericCanvas) = showable(m, canvas.output)
-
-Base.show(io::IO, m::MIME"text/plain", canvas::GenericCanvas; kwargs...) =
-    show(io, canvas.output; kwargs...)
-
-Base.show(io::IO, m::MIME, canvas::GenericCanvas; kwargs...) =
-    show(io, m, canvas.output; kwargs...)
+function (r::Renderer)(
+    canvas::Canvas, 
+    domain::Domain, trajectory::MaybeObservable{<:AbstractVector{<:State}}
+)
+    return render_trajectory!(canvas, r, domain, trajectory)
+end
 
 """
-    render(renderer::Renderer, domain::Domain, state::State, extras...)
+    render_state!(canvas, renderer, domain, state)
+
+"""
+    render_state!(canvas, renderer, domain, state; options...)
+
+
+"""
+    new_canvas(renderer::Renderer)
+    new_canvas(renderer::Renderer, figure::Figure)
+    new_canvas(renderer::Renderer, axis::Axis)
+    new_canvas(renderer::Renderer, gridpos::GridPosition)
+
+Creates a new [`Canvas`](@ref) to be used by `renderer`. An existing `figure`,
+`axis`, or `gridpos` can be specified to use as the base for the new canvas.
+"""
+function new_canvas(renderer::Renderer)
+    figure = Figure()
+    axis = Axis(figure[1, 1])
+    return Canvas(figure, axis)
+end
+new_canvas(renderer::Renderer, figure::Figure) =
+    Canvas(figure, contents(figure.layout))
+new_canvas(renderer::Renderer, axis::Axis) =
+    Canvas(axis.parent, axis)
+new_canvas(renderer::Renderer, gridpos::GridPosition) =
+    Canvas(gridpos.layout.parent, contents(gridpos))
+
+"""
+    render_state(renderer, domain, state)
 
 Uses `renderer` to render a `state` of a PDDL `domain`, constructing and
-returning a new [`Canvas`](@ref).  Optionally specify extra arguments
-(`extras`) such as goal specifications or planner solutions.
+returning a new [`Canvas`](@ref).
 """
-function render(renderer::Renderer, domain::Domain, state::State, extras...)
-    render!(new_canvas(renderer), renderer, domain, state, extras...)
+function render_state(
+    renderer::Renderer, domain::Domain, state; options...
+)
+    render_state!(new_canvas(renderer), renderer, domain, state; options...)
 end
 
 """
-    render!([canvas::Canvas], renderer::Renderer,
-            domain::Domain, state::State, extras...)
+    render_state!(canvas, renderer, domain, state; options...)
 
-Uses `renderer` to render a `state` of a PDDL `domain` to a `canvas`.
-If `canvas` is not specified, render to the last canvas used by `renderer`,
-creating a new `canvas` if necessary. Optionally specify extra arguments
-(`extras`) such as goal specifications or planner solutions.
+Uses `renderer` to render a `state` of a PDDL `domain` to an existing `canvas`,
+rendering over any existing content.
 """
-function render!(canvas::Canvas, renderer::Renderer,
-                 domain::Domain, state::State, extras...)
-    error("Not implemented.")
+function render_state!(
+    canvas::Canvas, renderer::Renderer, domain::Domain, state;
+    options...
+)
+    render_state!(canvas, renderer, domain, maybe_observe(state), options...)
 end
 
-function render!(renderer::Renderer, domain::Domain, state::State, extras...)
-    render!(current_canvas(renderer), domain, state, extras...)
-end
-
-"Renders an `object` in the PDDL state associated with a `canvas`."
-function render_object!(canvas::Canvas, renderer::Renderer,
-                        domain::Domain, state::State, object::Const)
-    error("Not implemented.")
-end
-
-render_object!(canvas::Canvas, renderer::Renderer, object::Const) =
-    render_object!(canvas, renderer, get_domain(canvas), get_state(canvas), object)
-
-"Animates the transition from `state1` to `state2`."
-function animate!(
-    canvas::Canvas, renderer::Renderer,
-    domain::Domain, state1::State, state2::State, action=nothing;
-    n_steps=nothing, step_dur=nothing, record=false
+function render_state!(
+    canvas::Canvas, renderer::Renderer, domain::Domain, state::Observable;
+    options...
 )
     error("Not implemented.")
 end
 
-"Animates a sequence of `states` and (optionally) intervening `actions`."
-function animate!(
-    canvas::Canvas, renderer::Renderer,
-    domain::Domain, states::AbstractVector{<:State}, actions=nothing;
-    n_steps=nothing, step_dur=nothing, record=false
+
+"""
+    render_plan(renderer, domain, state, actions; options...)
+
+Uses `renderer` to render a series of `actions` in a PDDL `domain` starting
+from `state`, constructing and returning a new [`Canvas`](@ref).
+"""
+function render_plan(
+    renderer::Renderer, domain::Domain, state, actions;
+    options...
+)
+    render_plan!(new_canvas(renderer), renderer, domain, state, actions;
+                 options...)
+end
+
+"""
+    render_plan!(canvas, renderer, domain, state, actions)
+
+Uses `renderer` to render a series of `actions` in a PDDL `domain` starting
+from `state`. Renders to a `canvas` on top of any existing content.
+"""
+function render_plan!(
+    canvas::Canvas, renderer::Renderer, domain::Domain,
+    state, actions;
+    options...
+)
+    render_plan!(canvas, renderer, domain, maybe_observe(state),
+                 maybe_observe(actions); options...)
+end
+
+function render_plan!(
+    canvas::Canvas, renderer::Renderer, domain::Domain,
+    state::Observable, actions::Observable;
+    options...
+)
+    trajectory = @lift PDDL.simulate(domain, $state, $actions)
+    return render_trajectory!(canvas, renderer, domain, trajectory; options...)
+end
+
+"""
+    render_trajectory(renderer::Renderer,
+                      domain::Domain, trajectory::AbstractVector{<:State})
+
+Uses `renderer` to render a `trajectory` of PDDL `domain` states, constructing
+and returning a new [`Canvas`](@ref).
+"""
+function render_trajectory(
+    renderer::Renderer, domain::Domain, trajectory;
+    options...
+)
+    render_trajectory!(new_canvas(renderer), renderer, domain, trajectory;
+                       options...)
+end
+
+"""
+    render_trajectory!(canvas::Canvas, renderer::Renderer,
+                       domain::Domain, trajectory::AbstractVector{<:State})
+
+Uses `renderer` to render a `trajectory` of PDDL `domain` states. Renders to a
+`canvas` on top of any existing content.
+"""
+function render_trajectory!(
+    canvas::Canvas, renderer::Renderer, domain::Domain, trajectory;
+    options...
+)
+    render_trajectory!(canvas, renderer, domain, maybe_observe(trajectory);
+                       options...)
+end
+
+function render_trajectory!(
+    canvas::Canvas, renderer::Renderer, domain::Domain, trajectory::Observable;
+    options...
 )
     error("Not implemented.")
 end
