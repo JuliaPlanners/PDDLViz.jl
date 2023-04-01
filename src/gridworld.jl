@@ -28,16 +28,21 @@ $(TYPEDFIELDS)
     obj_renderers::Dict{Symbol, Function} = Dict{Symbol, Function}()
     "Z-order for object types, from bottom to top."
     obj_type_z_order::Vector{Symbol} = collect(keys(obj_renderers))
+    "List of `(x, y, label, color)` tuples to label locations on the grid."
+    locations::Vector{Tuple} = Tuple[]
     "Whether to show an object inventory for each function in `inventory_fns`."
     show_inventory::Bool = false
     "Inventory indicator functions of the form `(domain, state, obj) -> Bool`."
     inventory_fns::Vector{Function} = Function[]
+    "Types of objects that can be each inventory."
+    inventory_types::Vector{Symbol} = Symbol[]
     "Axis titles / labels for each inventory."
     inventory_labels::Vector{String} = String[]
     "Default options for state rendering."
     state_options::Dict{Symbol, Any} = Dict{Symbol, Any}(
         :show_agent => true,
         :show_objects => true,
+        :show_locations => true
     )
     "Default options for trajectory rendering."
     trajectory_options::Dict{Symbol, Any} = Dict{Symbol, Any}(
@@ -90,6 +95,15 @@ function render_state!(
     map!(h -> (1:h-1) .+ 0.5, ax.yticks, height) 
     ax.xgridcolor, ax.ygridcolor = :black, :black
     ax.xgridstyle, ax.ygridstyle = :dash, :dash
+    # Render locations
+    if options[:show_locations]
+        for (x, y, label, color) in renderer.locations
+            _y = @lift $height - y + 1
+            fontsize = 1 / (1.5*length(label)^0.5)
+            text!(ax, x, _y; text=label, color=color, align=(:center, :center),
+                  markerspace=:data, fontsize=fontsize)
+        end
+    end
     # Render objects
     default_obj_renderer(d, s, o) = SquareShape(0, 0, 0.2, color=:gray)
     if options[:show_objects]
@@ -127,10 +141,12 @@ function render_state!(
     end
     # Render inventories
     if renderer.show_inventory
-        inventory_size = @lift max(length(PDDL.get_objects($state)), $width)
         colsize!(canvas.layout, 1, Auto(1))
         rowsize!(canvas.layout, 1, Auto(1))
         for (i, inventory_fn) in enumerate(renderer.inventory_fns)
+            # Extract objects
+            ty = get(renderer.inventory_types, i, :object)
+            sorted_objs = sort(PDDL.get_objects(domain, state[], ty), by=string)
             # Extract or construct axis for each inventory
             ax_i = get(canvas.blocks, i+1) do
                 title = get(renderer.inventory_labels, i, "Inventory")
@@ -142,6 +158,7 @@ function render_state!(
                 return _ax
             end
             # Render inventory as heatmap
+            inventory_size = @lift max(length(sorted_objs), $width)
             cmap = cgrad([:transparent, :black])
             heatmap!(ax_i, @lift(zeros($inventory_size, 1)),
                      colormap=cmap, colorrange=(0, 1))
@@ -153,7 +170,6 @@ function render_state!(
             ax_i.xgridcolor, ax_i.ygridcolor = :black, :black
             ax_i.xgridstyle, ax_i.ygridstyle = :solid, :solid
             # Compute object locations
-            sorted_objs = sort(PDDL.get_objects(state[]), by=string)
             obj_locs = @lift begin
                 locs = Int[]
                 n = 0

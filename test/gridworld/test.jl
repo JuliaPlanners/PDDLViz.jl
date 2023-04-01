@@ -28,9 +28,8 @@ renderer = RenderPDDL.GridworldRenderer(
         )
     ),
     show_inventory = true,
-    inventory_fns = [
-        (d, s, o) -> s[Compound(:has, [o])],
-    ]
+    inventory_fns = [(d, s, o) -> s[Compound(:has, [o])]],
+    inventory_types = [:item]
 )
 
 # Render initial state
