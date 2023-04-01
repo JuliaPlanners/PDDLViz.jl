@@ -4,7 +4,6 @@ using Base: @kwdef
 
 using PDDL
 using GLMakie, Makie
-using Makie: Block
 
 using DocStringExtensions
 

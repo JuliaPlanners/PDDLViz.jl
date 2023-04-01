@@ -26,11 +26,15 @@ renderer = RenderPDDL.GridworldRenderer(
             visible=!s[Compound(:has, [o])],
             color=gem_colors[parse(Int, string(o.name)[end])]
         )
-    )
+    ),
+    show_inventory = true,
+    inventory_fns = [
+        (d, s, o) -> s[Compound(:has, [o])],
+    ]
 )
 
 # Render initial state
-canvas = renderer(domain, state)
+canvas = renderer(domain, state); display(canvas)
 
 # Render plan
 plan = @pddl("(right)", "(right)", "(right)", "(up)", "(up)")
@@ -39,3 +43,18 @@ renderer(canvas, domain, state, plan)
 # Render trajectory
 trajectory = PDDL.simulate(domain, state, plan)
 canvas = renderer(domain, trajectory)
+
+# Animate trajectory
+plan = @pddl(
+    "(right)", "(right)", "(right)", "(up)", "(up)",
+    "(left)", "(left)", "(left)",
+    "(up)", "(up)", "(up)", "(up)",
+    "(pickup key1)", "(up)", "(pickup gem1)",
+    "(right)", "(right)", "(down)", "(unlock key1 door1)"
+)
+
+canvas = renderer(domain, state); display(canvas)
+for act in plan
+    canvas.state[] = PDDL.transition(domain, canvas.state[], act)
+    sleep(0.2)
+end

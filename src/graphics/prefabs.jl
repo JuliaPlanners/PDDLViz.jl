@@ -6,13 +6,12 @@ function GemGraphic(
     color=:royalblue, strokewidth=1.0, kwargs...
 )
     color = to_color(color)
-    outer = NgonShape(x, y, size, sides; color=color,
-                         strokewidth=strokewidth, kwargs...)
+    outer = NgonShape(x, y, size, sides; color=color, strokewidth=strokewidth)
     outer = scale(outer, 0.225, 0.3)
     color = lighten(color, 0.5) 
-    inner = NgonShape(x, y, size, sides; color=color, kwargs...)
+    inner = NgonShape(x, y, size, sides; color=color)
     inner = scale(inner, 0.135, 0.18)
-    return MultiGraphic(outer, inner)
+    return MultiGraphic(outer, inner; kwargs...)
 end
 
 "Locked door prefab graphic, consisting of square with a keyhole in it."
@@ -21,15 +20,13 @@ function LockedDoorGraphic(
     color=:gray, strokewidth=1.0, kwargs...
 )
     color = to_color(color)
-    bg = SquareShape(x, y, size; color=color,
-                     strokewidth=strokewidth, kwargs...)
+    bg = SquareShape(x, y, size; color=color, strokewidth=strokewidth)
     color = lighten(color, 0.1)
-    fg = SquareShape(x, y, 0.85*size; color=color, 
-                     strokewidth=strokewidth, kwargs...)
-    hole1 = NgonShape(x, y+0.1*size, 0.10*size, 16; color=:black, kwargs...)
-    hole2 = TriangleShape(x, y-0.1*size, size; color=:black, kwargs...)
+    fg = SquareShape(x, y, 0.85*size; color=color, strokewidth=strokewidth)
+    hole1 = NgonShape(x, y+0.1*size, 0.10*size, 16; color=:black)
+    hole2 = TriangleShape(x, y-0.1*size, size; color=:black)
     hole2 = scale(hole2, 0.125, -0.25)
-    return MultiGraphic(bg, fg, hole1, hole2)
+    return MultiGraphic(bg, fg, hole1, hole2; kwargs...)
 end
 
 "Key prefab graphic, consisting of a key with a handle and two teeth."
@@ -42,10 +39,10 @@ function KeyGraphic(
     blade = RectShape(0.375, 0.0, 0.75, 0.2)
     tooth1 = RectShape(0.4, -0.2, 0.1, 0.2)
     tooth2 = RectShape(0.6, -0.2, 0.1, 0.2)
-    key = MultiGraphic(handle, blade, tooth1, tooth2; color=color, kwargs...)
+    key = MultiGraphic(handle, blade, tooth1, tooth2; color=color)
     shadow = translate(key, 0.025, -0.025)
     shadow.attributes[:color] = :black
-    graphic = MultiGraphic(shadow, key)
+    graphic = MultiGraphic(shadow, key; kwargs...)
     return scale(translate(graphic, x, y), 0.5*size)
 end
 

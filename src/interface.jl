@@ -2,31 +2,44 @@ export Canvas, Renderer
 export render_state, render_plan, render_trajectory
 export render_state!, render_plan!, render_trajectory!
 
+import Makie: Block
+import Makie.GridLayoutBase: GridLayoutBase, gridcontent
+
 """
     Canvas
 
 A `Canvas` is a mutable container for renderable outputs produced by a
-[`Renderer`](@ref), consisting of a reference to the figure and axis blocks
+[`Renderer`](@ref), consisting of a reference to the figure and grid layout
 on which the output is rendered, the PDDL [`State`](@ref) that the output is
 based on, and a dictionary of additional `Observable`s.
 """
 mutable struct Canvas
     figure::Figure
     blocks::Vector{Block}
+    layout::GridLayout
     state::Union{Nothing,Observable}
     observables::Dict{Symbol,Observable}
 end
 
 Canvas(figure::Figure) =
-    Canvas(figure, Block[], nothing, Dict{Symbol,Observable}())
+    Canvas(figure, Block[], layout, nothing, Dict{Symbol,Observable}())
 Canvas(figure::Figure, axis::Block) =
-    Canvas(figure, Block[axis], nothing, Dict{Symbol,Observable}())
-Canvas(figure::Figure, blocks::Vector) =
-    Canvas(figure, blocks, nothing, Dict{Symbol,Observable}())
-Canvas(figure::Figure, blocks::Vector, state::State) =
-    Canvas(figure, blocks, Observable(state), Dict{Symbol,Observable}())
-Canvas(figure::Figure, blocks::Vector, state::Observable{<:State}) =
-    Canvas(figure, blocks, state, Dict{Symbol,Observable}())
+    Canvas(figure, Block[axis], gridcontent(axis).parent, nothing, Dict())
+Canvas(figure::Figure, layout::GridLayout) =
+    Canvas(figure, Vector{Block}(contents(layout)), layout, nothing, Dict())
+Canvas(figure::Figure, layout::GridLayout, state::State) =
+    Canvas(figure, Vector{Block}(contents(layout)), layout,
+           Observable(state), Dict())
+Canvas(figure::Figure, layout::GridLayout, state::Observable{<:State}) =
+    Canvas(figure, Vector{Block}(contents(layout)),
+           layout, state, Dict{Symbol,Observable}())
+
+Canvas(axis::Block) =
+    Canvas(axis.parent, axis)
+Canvas(layout::GridLayout) =
+    Canvas(GridLayoutBase.top_parent(gridpos), layout)
+Canvas(gridpos::GridPosition) =
+    Canvas(Makie.get_top_parent(gridpos), content(gridpos))
 
 Base.display(canvas::Canvas; kwargs...) = display(canvas.figure; kwargs...)
 
@@ -103,11 +116,11 @@ function new_canvas(renderer::Renderer)
     return Canvas(figure, axis)
 end
 new_canvas(renderer::Renderer, figure::Figure) =
-    Canvas(figure, contents(figure.layout))
+    Canvas(figure)
 new_canvas(renderer::Renderer, axis::Axis) =
-    Canvas(axis.parent, axis)
+    Canvas(axis)
 new_canvas(renderer::Renderer, gridpos::GridPosition) =
-    Canvas(gridpos.layout.parent, contents(gridpos))
+    Canvas(gridpos)
 
 """
     render_state(renderer, domain, state)
