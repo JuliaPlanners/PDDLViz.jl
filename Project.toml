@@ -14,6 +14,7 @@ PDDL = "2c8894f9-daa1-498a-9e3a-26edd9623db8"
 SymbolicPlanners = "b6fe5377-9711-4fad-95b0-be4eed71ecbb"
 
 [compat]
+ColorTypes = "0.11"
 PDDL = "0.2"
 julia = "1"
 
