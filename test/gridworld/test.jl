@@ -52,8 +52,4 @@ plan = @pddl(
     "(right)", "(right)", "(down)", "(unlock key1 door1)"
 )
 
-canvas = renderer(domain, state); display(canvas)
-for act in plan
-    canvas.state[] = PDDL.transition(domain, canvas.state[], act)
-    sleep(0.2)
-end
+anim = anim_plan(renderer, domain, state, plan; show=true)
