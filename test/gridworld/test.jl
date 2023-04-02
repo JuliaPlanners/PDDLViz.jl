@@ -1,5 +1,7 @@
 # Test gridworld rendering
-using RenderPDDL, PDDL, Test, GLMakie
+using PDDL, SymbolicPlanners
+using RenderPDDL, GLMakie
+using Test
 
 # Load example gridworld domain and problem
 domain = load_domain(joinpath(@__DIR__, "domain.pddl"))
@@ -43,13 +45,12 @@ renderer(canvas, domain, state, plan)
 trajectory = PDDL.simulate(domain, state, plan)
 canvas = renderer(domain, trajectory)
 
-# Animate trajectory
-plan = @pddl(
-    "(right)", "(right)", "(right)", "(up)", "(up)",
-    "(left)", "(left)", "(left)",
-    "(up)", "(up)", "(up)", "(up)",
-    "(pickup key1)", "(up)", "(pickup gem1)",
-    "(right)", "(right)", "(down)", "(unlock key1 door1)"
-)
+# Render solution
+planner = AStarPlanner(GoalCountHeuristic())
+spec = Specification(problem)
+sol = planner(domain, state, spec)
+canvas = renderer(domain, state, sol)
 
-anim = anim_plan(renderer, domain, state, plan; show=true)
+# Animate plan
+plan = collect(sol)
+anim = anim_plan!(canvas, renderer, domain, state, plan)

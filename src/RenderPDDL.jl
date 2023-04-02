@@ -2,9 +2,9 @@ module RenderPDDL
 
 using Base: @kwdef
 
-using PDDL
+using PDDL, SymbolicPlanners
+using Makie, GLMakie
 using FileIO
-using GLMakie, Makie
 
 using DocStringExtensions
 

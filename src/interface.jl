@@ -81,6 +81,13 @@ function (r::Renderer)(
 end
 
 function (r::Renderer)(
+    domain::Domain, state::MaybeObservable{<:State},
+    sol::MaybeObservable{<:Solution}
+)
+    return render_sol(r, domain, state, sol)
+end
+
+function (r::Renderer)(
     canvas::Canvas, 
     domain::Domain, state::MaybeObservable{<:State}
 )
@@ -100,6 +107,14 @@ function (r::Renderer)(
     domain::Domain, trajectory::MaybeObservable{<:AbstractVector{<:State}}
 )
     return render_trajectory!(canvas, r, domain, trajectory)
+end
+
+function (r::Renderer)(
+    canvas::Canvas, 
+    domain::Domain, state::MaybeObservable{<:State},
+    sol::MaybeObservable{<:Solution}
+)
+    return render_sol!(canvas, r, domain, state, sol)
 end
 
 """
