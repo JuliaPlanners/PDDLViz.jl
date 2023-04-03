@@ -147,7 +147,7 @@ function render_sol!(
 end
 
 function render_sol!(
-    canvas::Canvas, renderer::GridworldRenderer,
+    canvas::Canvas, renderer::Renderer,
     domain::Domain, state::Observable, sol::Observable{<: OrderedSolution};
     options...
 )

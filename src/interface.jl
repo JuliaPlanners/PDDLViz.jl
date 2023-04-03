@@ -39,10 +39,11 @@ Canvas(layout::GridLayout) =
 Canvas(gridpos::GridPosition) =
     Canvas(Makie.get_top_parent(gridpos), content(gridpos))
 
-Base.showable(io::IO, m::MIME"text/plain", canvas::Canvas) = true
-Base.showable(io::IO, m::MIME, canvas::Canvas) = showable(io, m, canvas.figure)
+Base.showable(m::MIME"text/plain", canvas::Canvas) = true
+Base.showable(m::MIME, canvas::Canvas) = showable(m, canvas.figure)
 Base.show(io::IO, m::MIME"text/plain", canvas::Canvas) = show(io, canvas)
 Base.show(io::IO, m::MIME, canvas::Canvas) = show(io, m, canvas.figure)
+
 Base.display(canvas::Canvas; kwargs...) = display(canvas.figure; kwargs...)
 
 function is_displayed(canvas::Canvas)
@@ -62,59 +63,67 @@ wish to visualize that domain.
 abstract type Renderer end
 
 function (r::Renderer)(
-    domain::Domain, state::MaybeObservable{<:State}
+    domain::Domain, state::MaybeObservable{<:State};
+    options...
 )
-    return render_state(r, domain, state)
+    return render_state(r, domain, state; options...)
 end
 
 function (r::Renderer)(
     domain::Domain, state::MaybeObservable{<:State},
-    actions::MaybeObservable{<:AbstractVector{<:Term}}
+    actions::MaybeObservable{<:AbstractVector{<:Term}};
+    options...
 )
-    return render_plan(r, domain, state, actions)
+    return render_plan(r, domain, state, actions; options)
 end
 
 function (r::Renderer)(
-    domain::Domain, trajectory::MaybeObservable{AbstractVector{<:State}}
+    domain::Domain, trajectory::MaybeObservable{AbstractVector{<:State}};
+    options...
 )
-    return render_trajectory(r, domain, trajectory)
+    return render_trajectory(r, domain, trajectory; options...)
 end
 
 function (r::Renderer)(
     domain::Domain, state::MaybeObservable{<:State},
-    sol::MaybeObservable{<:Solution}
+    sol::MaybeObservable{<:Solution};
+    options...
 )
-    return render_sol(r, domain, state, sol)
+    return render_sol(r, domain, state, sol; options...)
 end
 
 function (r::Renderer)(
     canvas::Canvas, 
-    domain::Domain, state::MaybeObservable{<:State}
+    domain::Domain, state::MaybeObservable{<:State};
+    options...
 )
-    return render_state!(canvas, r, domain, state)
-end
-
-function (r::Renderer)(
-    canvas::Canvas, 
-    domain::Domain, state::MaybeObservable{<:State},
-    actions::MaybeObservable{<:AbstractVector{<:Term}}
-)
-    return render_plan!(canvas, r, domain, state, actions)
-end
-
-function (r::Renderer)(
-    canvas::Canvas, 
-    domain::Domain, trajectory::MaybeObservable{<:AbstractVector{<:State}}
-)
-    return render_trajectory!(canvas, r, domain, trajectory)
+    return render_state!(canvas, r, domain, state; options...)
 end
 
 function (r::Renderer)(
     canvas::Canvas, 
     domain::Domain, state::MaybeObservable{<:State},
-    sol::MaybeObservable{<:Solution}
+    actions::MaybeObservable{<:AbstractVector{<:Term}};
+    options...
 )
-    return render_sol!(canvas, r, domain, state, sol)
+    return render_plan!(canvas, r, domain, state, actions; options...)
+end
+
+function (r::Renderer)(
+    canvas::Canvas, 
+    domain::Domain, trajectory::MaybeObservable{<:AbstractVector{<:State}};
+    options...
+)
+    return render_trajectory!(canvas, r, domain, trajectory; options...)
+end
+
+function (r::Renderer)(
+    canvas::Canvas, 
+    domain::Domain, state::MaybeObservable{<:State},
+    sol::MaybeObservable{<:Solution};
+    options...
+)
+    return render_sol!(canvas, r, domain, state, sol; options...)
 end
 
 """

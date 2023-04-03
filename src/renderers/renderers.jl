@@ -1,1 +1,1 @@
-include("gridworld.jl")
+include("gridworld/gridworld.jl")

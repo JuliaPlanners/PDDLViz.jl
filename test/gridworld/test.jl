@@ -46,7 +46,7 @@ trajectory = PDDL.simulate(domain, state, plan)
 canvas = renderer(domain, trajectory)
 
 # Render solution
-planner = AStarPlanner(GoalCountHeuristic())
+planner = AStarPlanner(GoalCountHeuristic(), save_search=true, save_search_order=true, max_nodes=120)
 spec = Specification(problem)
 sol = planner(domain, state, spec)
 canvas = renderer(domain, state, sol)
