@@ -35,7 +35,7 @@ renderer = RenderPDDL.GridworldRenderer(
 )
 
 # Render initial state
-canvas = renderer(domain, state); display(canvas)
+canvas = renderer(domain, state)
 
 # Render plan
 plan = @pddl("(right)", "(right)", "(right)", "(up)", "(up)")
@@ -46,7 +46,8 @@ trajectory = PDDL.simulate(domain, state, plan)
 canvas = renderer(domain, trajectory)
 
 # Render solution
-planner = AStarPlanner(GoalCountHeuristic(), save_search=true, save_search_order=true, max_nodes=120)
+planner = AStarPlanner(GoalCountHeuristic(), save_search=true,
+                       save_search_order=true, max_nodes=20)
 spec = Specification(problem)
 sol = planner(domain, state, spec)
 canvas = renderer(domain, state, sol)
@@ -54,3 +55,14 @@ canvas = renderer(domain, state, sol)
 # Animate plan
 plan = collect(sol)
 anim = anim_plan!(canvas, renderer, domain, state, plan)
+
+# Add controller
+controller = KeyboardController(
+    Keyboard.up => pddl"(up)",
+    Keyboard.down => pddl"(down)",
+    Keyboard.left => pddl"(left)",
+    Keyboard.right => pddl"(right)",
+    Keyboard.z, Keyboard.x, Keyboard.c, Keyboard.v
+)
+add_controller!(canvas, controller, domain, state)
+remove_controller!(canvas, controller)
