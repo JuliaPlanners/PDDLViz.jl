@@ -16,6 +16,7 @@ include("graphics/graphics.jl")
 include("interface.jl")
 include("render.jl")
 include("animate.jl")
+include("control.jl")
 include("renderers/renderers.jl")
 
 end

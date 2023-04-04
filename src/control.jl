@@ -1,5 +1,5 @@
 export Controller, KeyboardController
-export add_controller!, remove_controller!
+export add_controller!, remove_controller!, render_controls!
 
 import Makie: ObserverFunction
 
@@ -15,13 +15,15 @@ Can be attached to a canvas using [`add_controller!`](@ref), and removed using
 abstract type Controller end
 
 """
-    add_controller!(canvas, controller, domain, [init_state])
+    add_controller!(canvas, controller, domain, [init_state];
+                    show_controls::Bool=false)
 
 Adds a `controller` to a `canvas` for a given PDDL `domain`. An initial state
 `init_state` can be specified to enable restart functionality.
 """
 function add_controller!(canvas::Canvas, controller::Controller, 
-                         domain::Domain, init_state=nothing)
+                         domain::Domain, init_state=nothing;
+                         show_controls::Bool=false)
     error("Not implemented.")
 end
 
@@ -32,6 +34,14 @@ Removes a `controller` from a `canvas`.
 """
 remove_controller!(canvas::Canvas, controller::Controller) =
     error("Not implemented.")
+
+"""
+    render_controls!(canvas, controller, domain)
+
+Renders controls for a `controller` to a `canvas`.
+"""
+render_controls!(canvas::Canvas, controller::Controller, domain::Domain) =
+    nothing
 
 """
     KeyboardController(options...)
@@ -63,6 +73,7 @@ $(FIELDS)
     obsfunc::Ref{ObserverFunction} = Ref{ObserverFunction}()
 end
 
+
 function KeyboardController(
     args::Union{Pair{Keyboard.Button, <:Term}, Keyboard.Button}...; kwargs...
 ) where {T}
@@ -82,9 +93,12 @@ function KeyboardController(
     end
 end
 
+_default_extraprocess(state, acts) = sort!(acts, by=string)
+
 function add_controller!(
     canvas::Canvas, controller::KeyboardController,
-    domain::Domain, init_state=nothing
+    domain::Domain, init_state=nothing;
+    show_controls::Bool=false
 )
     controller.obsfunc[] = on(events(canvas.figure).keyboardbutton) do event
         figure, callback = canvas.figure, controller.callback
@@ -133,10 +147,106 @@ function add_controller!(
             end
         end
     end
+    if show_controls
+        render_controls!(canvas, controller, domain)
+    end
+    return nothing
 end
 
 function remove_controller!(canvas::Canvas, controller::KeyboardController)
     off(controller.obsfunc[])
 end
 
-_default_extraprocess(state, acts) = sort!(acts, by=string)
+function render_controls!(
+    canvas::Canvas, controller::KeyboardController, domain::Domain
+)
+    # Construct control legend
+    figure = canvas.figure
+    buttons = sort!(collect(keys(controller.keymap)))
+    labels = [write_pddl(controller.keymap[b]) for b in buttons]
+    n_fixed = length(buttons)
+    append!(buttons, controller.extrakeys)
+    append!(labels, fill(' '^40, length(controller.extrakeys)))
+    markers = _keyboard_button_marker.(buttons)
+    entries = [LegendEntry(m, Attributes(label=l, labelcolor=:black))
+               for (l, m) in zip(labels, markers)]
+    entrygroups = Observable(Makie.EntryGroup[("Controls", entries)])
+    gridpos = (1, size(figure.layout)[2]+1)
+    controls = Legend(figure[gridpos...], entrygroups;
+                      framevisible=false, labelsize=14,
+                      halign=:left, titlehalign=:left)
+    resize_to_layout!(figure)
+    # Extract observables from entries
+    label_obs = Observable[]
+    lcolor_obs = Observable[]
+    mcolor_obs = Observable[]
+    scolor_obs = Observable[]
+    for entry in controls.entrygroups[][1][2]
+        push!(label_obs, entry.attributes.label)
+        push!(lcolor_obs, entry.attributes.labelcolor)
+        push!(mcolor_obs, entry.elements[2].attributes.markercolor)
+        push!(scolor_obs, entry.elements[1].attributes.markerstrokecolor)
+    end
+    # Set up observer function
+    on(canvas.state, update=true) do state
+        # Recolor actions that are not available
+        actions = collect(available(domain, state))
+        for (i, key) in enumerate(buttons[1:n_fixed])
+            act = controller.keymap[key]
+            if act in actions
+                lcolor_obs[i][] = :black
+                mcolor_obs[i][] = :black
+                scolor_obs[i][] = :black
+            else
+                lcolor_obs[i][] = :gray
+                mcolor_obs[i][] = :gray
+                scolor_obs[i][] = :gray
+            end
+        end
+        # Filter and sort remaining available actions
+        actions = filter!(a -> !(a in values(controller.keymap)), actions)
+        actions = controller.extraprocess(state, actions)
+        for (i, key) in enumerate(controller.extrakeys)
+            if i <= length(actions)
+                act = actions[i]
+                label_obs[n_fixed+i][] = write_pddl(act)
+                mcolor_obs[n_fixed+i][] = :black
+                scolor_obs[n_fixed+i][] = :black
+            else
+                label_obs[n_fixed+i][] = ' '^40
+                mcolor_obs[n_fixed+i][] = :gray
+                scolor_obs[n_fixed+i][] = :gray
+            end
+        end
+    end
+    return controls
+end
+
+function _keyboard_button_marker(button::Keyboard.Button)
+    button_id = Int(button)
+    if button_id > 32 && button_id < 127
+        char = Char(button_id)
+    elseif button == Keyboard.space
+        char = '␣'
+    elseif button == Keyboard.backspace
+        char = '⌫'
+    elseif button == Keyboard.enter
+        char = '⏎'
+    elseif button == Keyboard.tab
+        char = '⇥'
+    elseif button == Keyboard.up
+        char = '↑'
+    elseif button == Keyboard.down
+        char = '↓'
+    elseif button == Keyboard.left
+        char = '←'
+    elseif button == Keyboard.right
+        char = '→'
+    else
+        char = '⍰' 
+    end
+    key = MarkerElement(marker=char, markersize=15, markercolor=:black)
+    box = MarkerElement(marker=:rect, markersize=30, color=(:white, 0.0),
+                        strokewidth=1, strokecolor=:black)
+    return [box, key]
+end

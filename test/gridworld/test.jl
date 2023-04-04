@@ -57,6 +57,7 @@ plan = collect(sol)
 anim = anim_plan!(canvas, renderer, domain, state, plan)
 
 # Add controller
+canvas = renderer(domain, state)
 controller = KeyboardController(
     Keyboard.up => pddl"(up)",
     Keyboard.down => pddl"(down)",
@@ -64,5 +65,5 @@ controller = KeyboardController(
     Keyboard.right => pddl"(right)",
     Keyboard.z, Keyboard.x, Keyboard.c, Keyboard.v
 )
-add_controller!(canvas, controller, domain, state)
+add_controller!(canvas, controller, domain, state; show_controls=true)
 remove_controller!(canvas, controller)
