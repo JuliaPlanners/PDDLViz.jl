@@ -49,18 +49,19 @@ function render_trajectory!(
             for (i, obj) in enumerate(objects)
                 x = state[renderer.get_obj_x(obj)]
                 y = height - state[renderer.get_obj_y(obj)] + 1
-                push!(obj_locations[i], Point2f(x, y))
+                push!(obj_locations[i][], Point2f(x, y))
                 next_x = next_state[renderer.get_obj_x(obj)]
                 next_y = height - next_state[renderer.get_obj_y(obj)] + 1
                 if next_x == x && next_y == y
-                    push!(obj_markers[i], :circle)
-                    push!(obj_rotations[i], 0.0)
+                    push!(obj_markers[i][], :circle)
+                    push!(obj_rotations[i][], 0.0)
                 else
-                    push!(obj_markers[i], :rtriangle)
-                    push!(obj_rotations[i], atan(next_y - y, next_x - x))
+                    push!(obj_markers[i][], :rtriangle)
+                    push!(obj_rotations[i][], atan(next_y - y, next_x - x))
                 end
             end
             # Add markers for agent
+            renderer.state_options[:show_agent] || continue
             x = state[renderer.get_agent_x()]
             y = height - state[renderer.get_agent_y()] + 1
             push!(locations[], Point2f(x, y))
@@ -82,11 +83,19 @@ function render_trajectory!(
         notify(markers)
         notify(rotations)
     end
+    markersize = get(options, :step_markersize, 0.3)
     # Plot agent locations over time
-    markersize = get(options, :agent_markersize, 0.3)
-    color = get(options, :agent_color, :black)
-    scatter!(ax, locations, marker=markers, rotations=rotations,
-             markersize=markersize, color=color, markerspace=:data)
+    if renderer.state_options[:show_agent]
+        color = get(options, :agent_color, :black)
+        scatter!(ax, locations, marker=markers, rotations=rotations,
+                 markersize=markersize, color=color, markerspace=:data)
+    end
+    # Plot tracked object locations over time
+    for (i, color) in enumerate(obj_colors)
+        scatter!(ax, obj_locations[i], marker=obj_markers[i],
+                 rotations=obj_rotations[i], markersize=markersize,
+                 color=color, markerspace=:data)
+    end
     # Return the canvas
     return canvas
 end

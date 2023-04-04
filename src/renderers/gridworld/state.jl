@@ -31,7 +31,7 @@ function render_state!(
     ax.xgridcolor, ax.ygridcolor = :black, :black
     ax.xgridstyle, ax.ygridstyle = :dash, :dash
     # Render locations
-    if options[:show_locations]
+    if get(options, :show_locations, true)
         for (x, y, label, color) in renderer.locations
             _y = @lift $height - y + 1
             fontsize = 1 / (1.5*length(label)^0.5)
@@ -41,7 +41,7 @@ function render_state!(
     end
     # Render objects
     default_obj_renderer(d, s, o) = SquareShape(0, 0, 0.2, color=:gray)
-    if options[:show_objects]
+    if get(options, :show_objects, true)
         # Render objects with type-specific graphics
         for type in renderer.obj_type_z_order
             for obj in PDDL.get_objects(domain, state[], type)
@@ -55,18 +55,18 @@ function render_state!(
            end
         end
         # Render remaining objects
-        for (obj, type) in PDDL.get_objtypes(state[])
-            type in renderer.obj_type_z_order && continue
-            graphic = @lift begin
-                x = $state[renderer.get_obj_x(obj)]
-                y = $height - $state[renderer.get_obj_y(obj)] + 1
-                translate(default_obj_renderer(domain, $state, obj), x, y)
-            end
-            graphicplot!(ax, graphic)
-        end
+        # for (obj, type) in PDDL.get_objtypes(state[])
+        #     type in renderer.obj_type_z_order && continue
+        #     graphic = @lift begin
+        #         x = $state[renderer.get_obj_x(obj)]
+        #         y = $height - $state[renderer.get_obj_y(obj)] + 1
+        #         translate(default_obj_renderer(domain, $state, obj), x, y)
+        #     end
+        #     graphicplot!(ax, graphic)
+        # end
     end
     # Render agent
-    if options[:show_agent]
+    if get(options, :show_agent, true)
         graphic = @lift begin
             x = $state[renderer.get_agent_x()]
             y = $height - $state[renderer.get_agent_y()] + 1

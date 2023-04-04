@@ -47,7 +47,7 @@ $(TYPEDFIELDS)
     "Default options for trajectory rendering."
     trajectory_options::Dict{Symbol, Any} = Dict{Symbol, Any}(
         :agent_color => :black,
-        :agent_markersize => 0.3,
+        :step_markersize => 0.3,
         :tracked_objects => Const[],
         :object_colors => [],
         :tracked_types => Symbol[],
