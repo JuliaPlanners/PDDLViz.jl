@@ -1,4 +1,4 @@
-name = "RenderPDDL"
+name = "PDDLViz"
 uuid = "8f72e95f-8ea1-4af3-8b89-086f52abff52"
 authors = ["Xuan <tanqazx@gmail.com> and contributors"]
 version = "0.1.0"

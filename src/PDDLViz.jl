@@ -1,4 +1,4 @@
-module RenderPDDL
+module PDDLViz
 
 using Base: @kwdef
 

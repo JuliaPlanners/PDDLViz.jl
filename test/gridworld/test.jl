@@ -1,5 +1,5 @@
 # Test gridworld rendering
-using RenderPDDL, GLMakie
+using PDDLViz, GLMakie
 using PDDL, SymbolicPlanners, PlanningDomains
 using Test
 
@@ -14,8 +14,8 @@ PDDL.Arrays.register!()
 state = initstate(domain, problem)
 
 # Construct gridworld renderer
-gem_colors = RenderPDDL.colorschemes[:vibrant]
-renderer = RenderPDDL.GridworldRenderer(
+gem_colors = PDDLViz.colorschemes[:vibrant]
+renderer = PDDLViz.GridworldRenderer(
     agent_renderer = (d, s) -> HumanGraphic(color=:black),
     obj_renderers = Dict(
         :key => (d, s, o) -> KeyGraphic(

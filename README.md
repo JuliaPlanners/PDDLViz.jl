@@ -1,26 +1,26 @@
-# RenderPDDL.jl
+# PDDLViz.jl
 
-A library for rendering, animating, and interacting with PDDL domains, built on top of Makie.jl.
+A library for visualizing, animating, and interacting with PDDL domains, built on top of Makie.jl.
 
 ## Installation
 
 Press `]` at the Julia REPL to enter the package manager, then install this package along with `PDDL` and a `Makie` backend of your choice (e.g. `GLMakie`):
 
 ```
-add https://github.com/JuliaPlanners/RenderPDDL.jl.git
+add https://github.com/JuliaPlanners/PDDLViz.jl.git
 add PDDL GLMakie
 ```
 
 ## Usage
 
-`RenderPDDL.jl` provides a number of built-in renderer types for certain classes of domains, such as `GridworldRenderer`. Each renderer can be customized for a specific domain by passing in options to its constructor:
+`PDDLViz.jl` provides a number of built-in renderer types for certain classes of domains, such as `GridworldRenderer`. Each renderer can be customized for a specific domain by passing in options to its constructor:
 
 ```julia
-using RenderPDDL, GLMakie
+using PDDLViz, GLMakie
 
 # Construct gridworld renderer
-gem_colors = RenderPDDL.colorschemes[:vibrant]
-renderer = RenderPDDL.GridworldRenderer(
+gem_colors = PDDLViz.colorschemes[:vibrant]
+renderer = PDDLViz.GridworldRenderer(
     agent_renderer = (d, s) -> HumanGraphic(color=:black),
     obj_renderers = Dict(
         :key => (d, s, o) -> KeyGraphic(
@@ -64,6 +64,6 @@ save("gridworld.png", canvas)
 
 The rendered image is below:
 
-![Example gridworld rendered by RenderPDDL.jl](assets/gridworld.png)
+![Example gridworld rendered by PDDLViz.jl](assets/gridworld.png)
 
 See  [`test/gridworld/test.jl`](test/gridworld/test.jl) for examples of how to render plans, trajectories and planner solutions, how to animate trajectories, and how to enable interactive controls.
