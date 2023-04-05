@@ -14,6 +14,8 @@ $(TYPEDFIELDS)
     grid_fluents::Vector{Term} = [pddl"(walls)"]
     "Colors for each grid layer."
     grid_colors::Vector = [:black]
+    "Whether the domain has an agent not associated with a PDDL object."
+    has_agent::Bool = true
     "Function that returns the PDDL fluent for the agent's x position."
     get_agent_x::Function = () -> pddl"(xpos)"
     "Function that returns the PDDL fluent for the agent's y position."

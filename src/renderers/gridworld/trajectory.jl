@@ -38,9 +38,9 @@ function render_trajectory!(
         for (ls, ms, rs) in zip(obj_locations, obj_markers, obj_rotations)
             empty!(ls[]); empty!(ms[]); empty!(rs[])
         end
-        empty!(locations[])
-        empty!(markers[])
-        empty!(rotations[])
+        if renderer.has_agent
+            empty!(locations[]); empty!(markers[]); empty!(rotations[])
+        end
         # Add locations and markers for each timestep
         for (t, state) in enumerate(trajectory)
             next_state = trajectory[min(t+1, length(trajectory))]
@@ -61,7 +61,7 @@ function render_trajectory!(
                 end
             end
             # Add markers for agent
-            renderer.state_options[:show_agent] || continue
+            renderer.has_agent || continue
             x = state[renderer.get_agent_x()]
             y = height - state[renderer.get_agent_y()] + 1
             push!(locations[], Point2f(x, y))
@@ -79,13 +79,13 @@ function render_trajectory!(
         for (ls, ms, rs) in zip(obj_locations, obj_markers, obj_rotations)
             notify(ls); notify(ms); notify(rs)
         end
-        notify(locations)
-        notify(markers)
-        notify(rotations)
+        if renderer.has_agent
+            notify(locations); notify(markers); notify(rotations)
+        end
     end
     markersize = get(options, :step_markersize, 0.3)
     # Plot agent locations over time
-    if renderer.state_options[:show_agent]
+    if renderer.has_agent
         color = get(options, :agent_color, :black)
         scatter!(ax, locations, marker=markers, rotations=rotations,
                  markersize=markersize, color=color, markerspace=:data)

@@ -66,7 +66,7 @@ function render_state!(
         # end
     end
     # Render agent
-    if get(options, :show_agent, true)
+    if renderer.has_agent && get(options, :show_agent, true)
         graphic = @lift begin
             x = $state[renderer.get_agent_x()]
             y = $height - $state[renderer.get_agent_y()] + 1
