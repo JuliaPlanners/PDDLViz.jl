@@ -49,4 +49,4 @@ jobs:
       - uses: julia-actions/julia-buildpkg@latest
       - uses: julia-actions/julia-runtest@latest
         with:
-          prefix: " DISPLAY=:0 xvfb-run -s '-screen 0 1024x768x24'"
+          prefix: "xvfb-run -s '-screen 0 1024x768x24'"
