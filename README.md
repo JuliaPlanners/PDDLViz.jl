@@ -20,7 +20,7 @@ using PDDLViz, GLMakie
 
 # Construct gridworld renderer
 gem_colors = PDDLViz.colorschemes[:vibrant]
-renderer = PDDLViz.GridworldRenderer(
+renderer = GridworldRenderer(
     agent_renderer = (d, s) -> HumanGraphic(color=:black),
     obj_renderers = Dict(
         :key => (d, s, o) -> KeyGraphic(
