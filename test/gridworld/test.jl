@@ -54,8 +54,8 @@ canvas = renderer(domain, state, sol)
 # Render policy solution
 heuristic = PlannerHeuristic(AStarPlanner(GoalCountHeuristic(), max_nodes=20))
 planner = RTDP(heuristic=heuristic, n_rollouts=5, max_depth=20)
-sol = planner(domain, state, pddl"(has gem1)")
-canvas = renderer(domain, state, sol)
+policy = planner(domain, state, pddl"(has gem1)")
+canvas = renderer(domain, state, policy)
 
 # Animate plan
 plan = collect(sol)
