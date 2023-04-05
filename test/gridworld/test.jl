@@ -1,7 +1,6 @@
 # Test gridworld rendering
 using PDDLViz, GLMakie
 using PDDL, SymbolicPlanners, PlanningDomains
-using Test
 
 # Load example gridworld domain and problem
 domain = load_domain(:doors_keys_gems)
