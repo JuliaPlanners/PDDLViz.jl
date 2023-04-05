@@ -26,11 +26,11 @@ function render_trajectory!(
     end
     # Construct observables for object locations and markers
     obj_locations = [Observable(Point2f[]) for _ in 1:length(objects)]
-    obj_markers = [Observable(Symbol[]) for _ in 1:length(objects)]
+    obj_markers = [Observable(Union{Char,Symbol}[]) for _ in 1:length(objects)]
     obj_rotations = [Observable(Float64[]) for _ in 1:length(objects)]
     # Construct observables for agent locations and markers
     locations = Observable(Point2f[])
-    markers = Observable(Symbol[])
+    markers = Observable(Union{Char,Symbol}[])
     rotations = Observable(Float64[])
     # Fill observables
     on(trajectory; update = true) do trajectory
@@ -53,10 +53,10 @@ function render_trajectory!(
                 next_x = next_state[renderer.get_obj_x(obj)]
                 next_y = height - next_state[renderer.get_obj_y(obj)] + 1
                 if next_x == x && next_y == y
-                    push!(obj_markers[i][], :circle)
+                    push!(obj_markers[i][], '⦿')
                     push!(obj_rotations[i][], 0.0)
                 else
-                    push!(obj_markers[i][], :rtriangle)
+                    push!(obj_markers[i][], :rtriangle) 
                     push!(obj_rotations[i][], atan(next_y - y, next_x - x))
                 end
             end
@@ -68,7 +68,7 @@ function render_trajectory!(
             next_x = next_state[renderer.get_agent_x()]
             next_y = height - next_state[renderer.get_agent_y()] + 1
             if next_x == x && next_y == y
-                push!(markers[], :circle)
+                push!(markers[], '⦿') 
                 push!(rotations[], 0.0)
             else
                 push!(markers[], :rtriangle)
