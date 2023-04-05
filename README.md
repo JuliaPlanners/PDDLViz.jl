@@ -1,6 +1,6 @@
 # PDDLViz.jl
 
-A library for visualizing, animating, and interacting with PDDL domains, built on top of Makie.jl.
+A library for visualizing, animating, and interacting with PDDL domains, built on top of [Makie.jl](https://github.com/MakieOrg/Makie.jl).
 
 ## Installation
 
