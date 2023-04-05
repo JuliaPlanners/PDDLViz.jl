@@ -2,10 +2,10 @@ module RenderPDDL
 
 using Base: @kwdef
 
-using PDDL, SymbolicPlanners
-using Makie, GLMakie
+using PDDL
+using SymbolicPlanners
+using Makie
 using FileIO
-
 using DocStringExtensions
 
 const MaybeObservable{T} = Union{Observable{T}, T}

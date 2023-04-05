@@ -1,11 +1,11 @@
 # Test gridworld rendering
-using PDDL, SymbolicPlanners
 using RenderPDDL, GLMakie
+using PDDL, SymbolicPlanners, PlanningDomains
 using Test
 
 # Load example gridworld domain and problem
-domain = load_domain(joinpath(@__DIR__, "domain.pddl"))
-problem = load_problem(joinpath(@__DIR__, "problem.pddl"))
+domain = load_domain(:doors_keys_gems)
+problem = load_problem(:doors_keys_gems, 3)
 
 # Load array extension to PDDL
 PDDL.Arrays.register!()

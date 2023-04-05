@@ -52,6 +52,9 @@ function is_displayed(canvas::Canvas)
     return screen in scene.current_screens
 end
 
+FileIO.save(path::AbstractString, canvas::Canvas; kwargs...) =
+    save(path, canvas.figure; kwargs...)
+
 """
     Renderer
 
