@@ -54,16 +54,6 @@ function render_state!(
                 graphicplot!(ax, graphic)
            end
         end
-        # Render remaining objects
-        # for (obj, type) in PDDL.get_objtypes(state[])
-        #     type in renderer.obj_type_z_order && continue
-        #     graphic = @lift begin
-        #         x = $state[renderer.get_obj_x(obj)]
-        #         y = $height - $state[renderer.get_obj_y(obj)] + 1
-        #         translate(default_obj_renderer(domain, $state, obj), x, y)
-        #     end
-        #     graphicplot!(ax, graphic)
-        # end
     end
     # Render agent
     if renderer.has_agent && get(options, :show_agent, true)

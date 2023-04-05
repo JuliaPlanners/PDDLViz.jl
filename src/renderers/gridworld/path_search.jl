@@ -13,7 +13,7 @@ function render_sol!(
     options = merge(renderer.trajectory_options, options)
     # Render search tree
     if get(options, :show_search, true) && !isnothing(sol[].search_tree)
-        # Set up observables for agents
+        # Set up observables for agent
         agent_locs = Observable(Point2f[])
         agent_dirs = Observable(Point2f[])
         # Set up observables for tracked objects

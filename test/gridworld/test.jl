@@ -44,11 +44,17 @@ renderer(canvas, domain, state, plan)
 trajectory = PDDL.simulate(domain, state, plan)
 canvas = renderer(domain, trajectory)
 
-# Render solution
+# Render path search solution
 planner = AStarPlanner(GoalCountHeuristic(), save_search=true,
                        save_search_order=true, max_nodes=20)
 spec = Specification(problem)
 sol = planner(domain, state, spec)
+canvas = renderer(domain, state, sol)
+
+# Render policy solution
+heuristic = PlannerHeuristic(AStarPlanner(GoalCountHeuristic(), max_nodes=20))
+planner = RTDP(heuristic=heuristic, n_rollouts=5, max_depth=20)
+sol = planner(domain, state, pddl"(has gem1)")
 canvas = renderer(domain, state, sol)
 
 # Animate plan

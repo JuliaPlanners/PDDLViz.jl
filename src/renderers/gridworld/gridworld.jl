@@ -27,7 +27,9 @@ $(TYPEDFIELDS)
     "Agent renderer, of the form `(domain, state) -> Graphic`."
     agent_renderer::Function = (d, s) -> CircleShape(0, 0, 0.3, color=:black)
     "Per-type object renderers, of the form `(domain, state, obj) -> Graphic`."
-    obj_renderers::Dict{Symbol, Function} = Dict{Symbol, Function}()
+    obj_renderers::Dict{Symbol, Function} = Dict{Symbol, Function}(
+        :object => (d, s, o) -> SquareShape(0, 0, 0.2, color=:gray)
+    )
     "Z-order for object types, from bottom to top."
     obj_type_z_order::Vector{Symbol} = collect(keys(obj_renderers))
     "List of `(x, y, label, color)` tuples to label locations on the grid."
@@ -68,3 +70,4 @@ end
 include("state.jl")
 include("trajectory.jl")
 include("path_search.jl")
+include("policy.jl")
