@@ -47,7 +47,6 @@ jobs:
             ${{ runner.os }}-test-
             ${{ runner.os }}-
       - uses: julia-actions/julia-buildpkg@latest
-      - run: DISPLAY=:0
       - uses: julia-actions/julia-runtest@latest
         with:
-          prefix: "xvfb-run -s '-screen 0 1024x768x24'"
+          prefix: "export DISPLAY=:0 && xvfb-run -s '-screen 0 1024x768x24'"
