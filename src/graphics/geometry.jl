@@ -7,6 +7,7 @@ GeometryBasics.coordinates(g::MultiGraphic) =
 
 "Return the centroid of a graphic."
 centroid(g::BasicGraphic) = centroid(g.shape)
+centroid(g::MarkerGraphic) = Point2(g.x, g.y)
 centroid(g::MultiGraphic) = centroid(boundingbox(g))
 centroid(c::Circle) = c.center
 centroid(r::Rect2{T}) where {T} =
@@ -20,6 +21,10 @@ boundingbox(g::Graphic) = Rect(coordinates(g))
 "Translate a graphic by `x` and `y` units."
 function translate(g::BasicGraphic, x::Real, y::Real)
     return BasicGraphic(translate(g.shape, x, y), copy(g.attributes))
+end
+
+function translate(g::MarkerGraphic, x::Real, y::Real)
+    return MarkerGraphic(g.marker, g.x + x, g.y + y, g.w, g.h, copy(g.attributes))
 end
 
 function translate(g::MultiGraphic, x::Real, y::Real)
@@ -41,6 +46,10 @@ end
 "Scale by a horizontal factor `x` and vertical factor `y` around a point `c`."
 function scale(g::BasicGraphic, x::Real, y::Real=x, c=centroid(g))
     return BasicGraphic(scale(g.shape, x, y, c), copy(g.attributes))
+end
+
+function scale(g::MarkerGraphic, x::Real, y::Real=x, c=centroid(g))
+    return MarkerGraphic(g.marker, g.x, g.y, g.w * x, g.h * y, copy(g.attributes))
 end
 
 function scale(g::MultiGraphic, x::Real, y::Real=x, c=centroid(g))
@@ -73,6 +82,12 @@ end
 "Rotate a graphic by θ radians around a point `c`."
 function rotate(g::BasicGraphic, θ::Real, c=centroid(g))
     return BasicGraphic(rotate(g.shape, θ, c), copy(g.attributes))
+end
+
+function rotate(g::MarkerGraphic, θ::Real, c=nothing)
+    attributes = copy(g.attributes)
+    attributes[:rotations] = get(attributes, :rotations, 0) + θ
+    return MarkerGraphic(g.marker, g.x, g.y, g.w, g.h, attributes)
 end
 
 function rotate(g::MultiGraphic, θ::Real, c=centroid(g))

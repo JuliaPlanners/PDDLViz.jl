@@ -1,5 +1,7 @@
 using GeometryBasics: GeometryBasics, Circle, Rect, Polygon, coordinates
 
+export BasicGraphic, MarkerGraphic, MultiGraphic
+
 abstract type Graphic end
 
 """
@@ -14,6 +16,28 @@ end
 
 BasicGraphic(shape; attributes...) =
     BasicGraphic(shape, Dict{Symbol,Any}(attributes...))
+
+"""
+    MarkerGraphic(marker, x, y, [w=1.0, h=w]; attributes...)
+
+A marker graphic with a given position and size, rendered using `scatter`
+with the corresponding marker type.
+"""
+struct MarkerGraphic{T} <: Graphic
+    marker::T
+    x::Float64
+    y::Float64
+    w::Float64
+    h::Float64
+    attributes::Dict{Symbol, Any}
+end
+
+function MarkerGraphic(
+    marker::T, x::Real=0.0, y::Real=0.0, w::Real=1.0, h::Real=w;
+    attributes...
+) where {T}
+    return MarkerGraphic{T}(marker, x, y, w, h, Dict{Symbol,Any}(attributes...))
+end
 
 """
     MultiGraphic(graphics; attributes...)

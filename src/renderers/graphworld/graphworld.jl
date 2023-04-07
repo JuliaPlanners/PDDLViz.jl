@@ -29,20 +29,22 @@ $(TYPEDFIELDS)
     "Per-type location renderers, of the form `(domain, state, loc) -> Graphic`."
     loc_renderers::Dict{Symbol, Function} = Dict{Symbol, Function}()
     "Per-type object renderers, of the form `(domain, state, obj) -> Graphic`."
-    obj_renderers::Dict{Symbol, Function} = Dict{Symbol, Function}(
-        :movable => (d, s, o) -> SquareShape(0, 0, 0.2, color=:gray)
-    )
+    obj_renderers::Dict{Symbol, Function} = Dict{Symbol, Function}()
     "Default options for state rendering."
     state_options::Dict{Symbol, Any} = Dict{Symbol, Any}(
+        :show_location_graphics => true
         :show_location_labels => true,
+        :show_movable_graphics => true
         :show_movable_labels => true,
-        :show_locations => true
+        :label_offset_mult => 0.2,
     )
-    "Default options for graph rendering."
+    "Default options for graph rendering, passed to the `graphplot` recipe."
     graph_options::Dict{Symbol, Any} = Dict{Symbol, Any}(
-        :node_size => 20,
+        :node_size => 0.05,
+        :node_attr => (markerspace=:data,),
         :nlabels_fontsize => 20,
-        :nlabels_align => (:center, :center)
+        :nlabels_align => (:center, :center),
+        :elabels_fontsize => 16,
     )
 end
 

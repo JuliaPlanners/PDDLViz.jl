@@ -1,4 +1,6 @@
-export GemGraphic, LockedDoorGraphic, KeyGraphic, RobotGraphic, HumanGraphic
+export GemGraphic, LockedDoorGraphic, KeyGraphic
+export RobotGraphic, HumanGraphic
+export CityGraphic
 
 "Gem prefab graphic, consisting of a N-gon and a smaller N-gon inside it."
 function GemGraphic(
@@ -95,4 +97,17 @@ function HumanGraphic(
         l_arm1, l_arm2, leg1, leg2; color=color, kwargs...
     )
     return scale(human, 1.2, 1.2)
+end
+
+"City prefab graphic, made of three rectangles."
+function CityGraphic(
+    x::Real=0.0, y::Real=0.0, size::Real=1.0;
+    color=:grey, kwargs...
+)
+    color = to_color(color)
+    block1 = RectShape(x+0.00, y, 0.30, 0.75, color=color)
+    block2 = RectShape(x-0.15, y-0.075, 0.30, 0.60, color=darken(color, 0.2))
+    block3 = RectShape(x+0.15, y-0.1875, 0.30, 0.375, color=darken(color, 0.4))
+    city = MultiGraphic(block1, block2, block3; kwargs...)
+    return scale(city, size)
 end

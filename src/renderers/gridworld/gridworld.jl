@@ -59,8 +59,6 @@ $(TYPEDFIELDS)
     )
 end
 
-current_canvas(renderer::GridworldRenderer) = error("Not implemented.")
-
 function new_canvas(renderer::GridworldRenderer)
     figure = Figure(resolution=(600,600))
     layout = GridLayout(figure[1,1])
