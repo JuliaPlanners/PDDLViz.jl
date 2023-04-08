@@ -3,9 +3,9 @@ module PDDLViz
 using Base: @kwdef
 
 using PDDL, SymbolicPlanners
-using Makie, FileIO
-using GraphMakie, Graphs
-using GraphMakie.NetworkLayout
+using Makie, GraphMakie
+using Graphs, GraphMakie.NetworkLayout
+using FileIO, Base64
 using DocStringExtensions
 
 const MaybeObservable{T} = Union{Observable{T}, T}

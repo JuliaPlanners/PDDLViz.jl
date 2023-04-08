@@ -7,16 +7,67 @@ export anim_plan, anim_trajectory
 Displayable animation which wraps a `VideoStream` object. Can be displayed
 with `show(io, MIME"text/html"(), anim)`, or saved with `save(path, anim)`.
 """
-struct Animation
+mutable struct Animation
     videostream::VideoStream
+    path::String
+end
+
+Animation(videostream::VideoStream) =
+    Animation(videostream, videostream.path)
+
+function FileIO.save(path::AbstractString, anim::Animation; kwargs...)
+    if anim.path == anim.videostream.path
+        save(path, anim.videostream; kwargs...)
+        anim.path = abspath(path)
+    elseif anim.path != abspath(path)
+        format = lstrip(splitext(path)[2], '.')
+        options = anim.videostream.options
+        if format != options.format || !isempty(kwargs)
+            framerate = get(kwargs, :framerate, options.framerate)
+            Makie.convert_video(anim.path, path; framerate=framerate, kwargs...)
+        else
+            cp(anim.path, path; force=true)
+        end
+    else
+        warn("Animation already saved to $path.")
+    end
+    return path
 end
 
 Base.show(io::IO, ::MIME"juliavscode/html", anim::Animation) =
-    show(io, MIME"text/html"(), anim.videostream)
-Base.show(io::IO, m::MIME"text/html", anim::Animation) =
-    show(io, m, anim.videostream)
-FileIO.save(path::AbstractString, anim::Animation; kwargs...) =
-    save(path, anim.videostream; kwargs...)
+    show(io, MIME"text/html"(), anim)
+
+function Base.show(io::IO, ::MIME"text/html", anim::Animation)
+    # Save to file if not already saved
+    format = anim.videostream.options.format
+    if anim.path == anim.videostream.path
+        dir = mktempdir()
+        path = joinpath(dir, "$(gensym(:video)).$(format)")
+        save(path, anim)
+    end
+    # Display animation as HTML tag, depending on format
+    if format == "gif"
+        # Display GIFs as image tags
+        blob = base64encode(read(anim.path))
+        print(io, "<img src=\"data:image/gif;base64,$blob\">")
+    elseif format == "mp4"
+        # Display MP4 videos as video tags
+        blob = base64encode(read(anim.path))
+        print(io, "<video controls autoplay muted>",
+             "<source src=\"data:video/mp4;base64,$blob\"",
+             "type=\"video/mp4\"></video>")
+    else
+        # Convert other video types to MP4
+        mktempdir() do dir
+            path = joinpath(dir, "video.mp4")
+            save(path, anim)
+            blob = base64encode(read(path))
+            print(io, "<video controls autoplay muted>",
+                  "<source src=\"data:video/mp4;base64,$blob\"",
+                  "type=\"video/mp4\"></video>")
+        end
+    end
+end
 
 """
     anim_plan([path], renderer, domain, state, actions;
