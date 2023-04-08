@@ -23,7 +23,7 @@ function render_state!(
     canvas::Canvas, renderer::Renderer, domain::Domain, state;
     options...
 )
-    render_state!(canvas, renderer, domain, maybe_observe(state), options...)
+    render_state!(canvas, renderer, domain, maybe_observe(state); options...)
 end
 
 function render_state!(
