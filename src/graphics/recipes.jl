@@ -44,6 +44,21 @@ function Makie.plot!(plt::GraphicPlot{<:Tuple{MarkerGraphic}})
              markerspace=:data, attributes...)
 end
 
+function Makie.plot!(plt::GraphicPlot{<:Tuple{TextGraphic}})
+    graphic = plt[:graphic]
+    attributes = Dict(plt.attributes)
+    local_attributes = Dict(
+        k => @lift($graphic.attributes[k])
+        for k in keys(graphic[].attributes)
+    )
+    attributes = merge!(attributes, local_attributes)
+    # Plot text
+    str = @lift $graphic.str
+    text!(plt, @lift($graphic.x), @lift($graphic.y); text=str,
+          fontsize=@lift($graphic.fontsize), markerspace=:data,
+          align=(:center, :center), attributes...)
+end
+
 function Makie.plot!(plt::GraphicPlot{<:Tuple{MultiGraphic}})
     graphic = plt[:graphic]
     attributes = Dict(plt.attributes)

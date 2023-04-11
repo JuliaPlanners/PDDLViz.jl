@@ -1,6 +1,6 @@
 using GeometryBasics: GeometryBasics, Circle, Rect, Polygon, coordinates
 
-export BasicGraphic, MarkerGraphic, MultiGraphic
+export BasicGraphic, MarkerGraphic, TextGraphic, MultiGraphic
 
 abstract type Graphic end
 
@@ -37,6 +37,32 @@ function MarkerGraphic(
     attributes...
 ) where {T}
     return MarkerGraphic{T}(marker, x, y, w, h, Dict{Symbol,Any}(attributes...))
+end
+
+"""
+    TextGraphic(str, x, y, [fontsize]; attributes...)
+
+A text graphic with a given position and [fontsize], rendered using the `text`
+plotting command.
+"""
+struct TextGraphic <: Graphic
+    str::String
+    x::Float64
+    y::Float64
+    fontsize::Vec2f
+    attributes::Dict{Symbol, Any}
+end
+
+function TextGraphic(
+    str::AbstractString, x::Real=0.0, y::Real=0.0, fontsize=1/length(str);
+    attributes...
+)
+    if fontsize isa Real
+        fontsize = Vec2f(fontsize, fontsize)
+    elseif fontsize isa Tuple
+        fontsize = Vec2f(fontsize...)
+    end
+    return TextGraphic(str, x, y, fontsize, Dict{Symbol,Any}(attributes...))
 end
 
 """

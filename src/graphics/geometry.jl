@@ -2,12 +2,17 @@
 "Return the coordinates of a graphic."
 GeometryBasics.coordinates(g::BasicGraphic) =
     Point2{Float64}.(coordinates(g.shape))
+GeometryBasics.coordinates(g::MarkerGraphic) =
+    coordinates(RectShape(g.x, g.y, g.w, g.h))
+GeometryBasics.coordinates(g::TextGraphic) =
+    coordinates(RectShape(g.x, g.y, g.fontsize[1]*length(g.str), g.fontsize[2]))
 GeometryBasics.coordinates(g::MultiGraphic) =
     reduce(vcat, (coordinates(c) for c in g.components))
 
 "Return the centroid of a graphic."
 centroid(g::BasicGraphic) = centroid(g.shape)
 centroid(g::MarkerGraphic) = Point2(g.x, g.y)
+centroid(g::TextGraphic) = Point2(g.x, g.y)
 centroid(g::MultiGraphic) = centroid(boundingbox(g))
 centroid(c::Circle) = c.center
 centroid(r::Rect2{T}) where {T} =
@@ -25,6 +30,10 @@ end
 
 function translate(g::MarkerGraphic, x::Real, y::Real)
     return MarkerGraphic(g.marker, g.x + x, g.y + y, g.w, g.h, copy(g.attributes))
+end
+
+function translate(g::TextGraphic, x::Real, y::Real)
+    return TextGraphic(g.str, g.x + x, g.y + y, g.fontsize, copy(g.attributes))
 end
 
 function translate(g::MultiGraphic, x::Real, y::Real)
@@ -50,6 +59,10 @@ end
 
 function scale(g::MarkerGraphic, x::Real, y::Real=x, c=centroid(g))
     return MarkerGraphic(g.marker, g.x, g.y, g.w * x, g.h * y, copy(g.attributes))
+end
+
+function scale(g::TextGraphic, x::Real, y::Real=x, c=centroid(g))
+    return TextGraphic(g.str, g.x, g.y, g.fontsize .* (x, y), copy(g.attributes))
 end
 
 function scale(g::MultiGraphic, x::Real, y::Real=x, c=centroid(g))
@@ -88,6 +101,12 @@ function rotate(g::MarkerGraphic, θ::Real, c=nothing)
     attributes = copy(g.attributes)
     attributes[:rotations] = get(attributes, :rotations, 0) + θ
     return MarkerGraphic(g.marker, g.x, g.y, g.w, g.h, attributes)
+end
+
+function rotate(g::TextGraphic, θ::Real, c=nothing)
+    attributes = copy(g.attributes)
+    attributes[:rotation] = get(attributes, :rotation, 0) + θ
+    return TextGraphic(g.str, g.x, g.y, g.fontsize, attributes)
 end
 
 function rotate(g::MultiGraphic, θ::Real, c=centroid(g))
