@@ -171,8 +171,7 @@ function render_controls!(
     entries = [LegendEntry(m, Attributes(label=l, labelcolor=:black))
                for (l, m) in zip(labels, markers)]
     entrygroups = Observable(Makie.EntryGroup[("Controls", entries)])
-    gridpos = (1, size(figure.layout)[2]+1)
-    controls = Legend(figure[gridpos...], entrygroups;
+    controls = Legend(figure[1, end+1], entrygroups;
                       framevisible=false, labelsize=14,
                       halign=:left, titlehalign=:left)
     resize_to_layout!(figure)

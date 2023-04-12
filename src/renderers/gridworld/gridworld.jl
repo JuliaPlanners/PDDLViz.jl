@@ -60,7 +60,7 @@ $(TYPEDFIELDS)
 end
 
 function new_canvas(renderer::GridworldRenderer)
-    figure = Figure(resolution=(600,600))
+    figure = Figure(resolution=(800,800))
     layout = GridLayout(figure[1,1])
     return Canvas(figure, layout)
 end

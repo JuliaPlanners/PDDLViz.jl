@@ -9,7 +9,9 @@ function render_state!(
     canvas.state = state
     # Extract or construct main axis
     ax = get(canvas.blocks, 1) do 
-        _ax = Axis(canvas.layout[1,1], aspect=DataAspect())
+        _ax = Axis(canvas.layout[1,1], aspect=DataAspect(),
+                   xzoomlock=true, xpanlock=true, xrectzoom=false,
+                   yzoomlock=true, ypanlock=true, yrectzoom=false)
         hidedecorations!(_ax, grid=false)
         push!(canvas.blocks, _ax)
         return _ax
@@ -30,6 +32,8 @@ function render_state!(
     map!(h -> (1:h-1) .+ 0.5, ax.yticks, height) 
     ax.xgridcolor, ax.ygridcolor = :black, :black
     ax.xgridstyle, ax.ygridstyle = :dash, :dash
+    xlims!(ax, 0.5, width[] + 0.5)
+    ylims!(ax, 0.5, height[] + 0.5)
     # Render locations
     if get(options, :show_locations, true)
         for (x, y, label, color) in renderer.locations
@@ -77,7 +81,9 @@ function render_state!(
                 title = get(renderer.inventory_labels, i, "Inventory")
                 _ax = Axis(canvas.layout[i+1, 1], aspect=DataAspect(),
                            title=title, titlealign=:left,
-                           titlefont=:regular, titlesize=20)
+                           titlefont=:regular, titlesize=20,
+                           xzoomlock=true, xpanlock=true, xrectzoom=false,
+                           yzoomlock=true, ypanlock=true, yrectzoom=false)
                 hidedecorations!(_ax, grid=false)
                 push!(canvas.blocks, _ax)
                 return _ax
@@ -124,6 +130,20 @@ function render_state!(
         end
         rowgap!(canvas.layout, 10)
         resize_to_layout!(canvas.figure)
+    end
+    # Render caption
+    if get(options, :caption, nothing) !== nothing
+        caption = options[:caption]
+        _ax = canvas.blocks[end]
+        _ax.xlabel = caption
+        _ax.xlabelvisible = true
+        _ax.xlabelfont = get(options, :caption_font, :regular)
+        _ax.xlabelsize = get(options, :caption_size, 24)
+        _ax.xlabelcolor = get(options, :caption_color, :black)
+        _ax.xlabelpadding = get(options, :caption_padding, 12)
+        _ax.xlabelrotation = get(options, :caption_rotation, 0)
+        # Store observable for caption in canvas
+        canvas.observables[:caption] = _ax.xlabel
     end
     # Return the canvas
     return canvas
