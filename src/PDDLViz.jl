@@ -6,6 +6,7 @@ using PDDL, SymbolicPlanners
 using Makie, GraphMakie
 using Graphs, GraphMakie.NetworkLayout
 using FileIO, Base64
+using OrderedCollections
 using DocStringExtensions
 
 const MaybeObservable{T} = Union{Observable{T}, T}

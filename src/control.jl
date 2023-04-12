@@ -59,7 +59,7 @@ $(FIELDS)
 """
 @kwdef struct KeyboardController{T,U} <: Controller
     "A dictionary mapping keyboard keys to PDDL actions."
-    keymap::Dict{Keyboard.Button, Term} = Dict{Mouse.Button, Term}()
+    keymap::OrderedDict{Keyboard.Button, Term} = OrderedDict{Keyboard.Button, Term}()
     "Keys mapped to remaining available actions (default: number keys)."
     extrakeys::Vector{Keyboard.Button} = Keyboard.Button.(collect(49:57))
     "Function `(state, acts) -> acts` that filters/processes remaining actions."
@@ -77,7 +77,7 @@ end
 function KeyboardController(
     args::Union{Pair{Keyboard.Button, <:Term}, Keyboard.Button}...; kwargs...
 ) where {T}
-    keymap = Dict{Keyboard.Button, Term}()
+    keymap = OrderedDict{Keyboard.Button, Term}()
     extrakeys = Keyboard.Button[]
     for arg in args
         if arg isa Pair{Keyboard.Button, <:Term}
@@ -162,7 +162,7 @@ function render_controls!(
 )
     # Construct control legend
     figure = canvas.figure
-    buttons = sort!(collect(keys(controller.keymap)))
+    buttons = collect(keys(controller.keymap))
     labels = [write_pddl(controller.keymap[b]) for b in buttons]
     n_fixed = length(buttons)
     append!(buttons, controller.extrakeys)
