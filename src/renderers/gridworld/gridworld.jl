@@ -68,25 +68,27 @@ include("policy.jl")
 include("animate.jl")
 
 # Add documentation for auxiliary options
-@doc """
-$(@doc GridworldRenderer)
+Base.with_logger(Base.NullLogger()) do
+    @doc """
+    $(@doc GridworldRenderer)
 
-# State options
+    # State options
 
-These options can be passed as keyword arguments to [`render_state`](@ref):
+    These options can be passed as keyword arguments to [`render_state`](@ref):
 
-$(Base.doc(default_state_options, Tuple{Type{GridworldRenderer}}))
+    $(Base.doc(default_state_options, Tuple{Type{GridworldRenderer}}))
 
-# Trajectory options
+    # Trajectory options
 
-These options can be passed as keyword arguments to [`render_trajectory`](@ref):
+    These options can be passed as keyword arguments to [`render_trajectory`](@ref):
 
-$(Base.doc(default_trajectory_options, Tuple{Type{GridworldRenderer}}))
+    $(Base.doc(default_trajectory_options, Tuple{Type{GridworldRenderer}}))
 
-# Animation options
+    # Animation options
 
-These options can be passed as keyword arguments to animation functions:
+    These options can be passed as keyword arguments to animation functions:
 
-$(Base.doc(default_anim_options, Tuple{Type{GridworldRenderer}}))
-"""
-GridworldRenderer
+    $(Base.doc(default_anim_options, Tuple{Type{GridworldRenderer}}))
+    """
+    GridworldRenderer
+end

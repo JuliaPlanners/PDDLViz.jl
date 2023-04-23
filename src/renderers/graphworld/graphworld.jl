@@ -53,13 +53,15 @@ end
 include("state.jl")
 
 # Add documentation for auxiliary options
-@doc """
-$(@doc GraphworldRenderer)
+Base.with_logger(Base.NullLogger()) do
+    @doc """
+    $(@doc GraphworldRenderer)
 
-# State options
+    # State options
 
-These options can be passed as keyword arguments to [`render_state`](@ref):
+    These options can be passed as keyword arguments to [`render_state`](@ref):
 
-$(Base.doc(default_state_options, Tuple{Type{GraphworldRenderer}}))
-"""
-GraphworldRenderer
+    $(Base.doc(default_state_options, Tuple{Type{GraphworldRenderer}}))
+    """
+    GraphworldRenderer
+end
