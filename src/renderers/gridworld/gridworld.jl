@@ -5,7 +5,7 @@ export GridworldRenderer
 
 Customizable renderer for 2D gridworld domains.
 
-# Options
+# General options
 
 $(TYPEDFIELDS)
 """
@@ -45,20 +45,14 @@ $(TYPEDFIELDS)
     "Axis titles / labels for each inventory."
     inventory_labels::Vector{String} = String[]
     "Default options for state rendering."
-    state_options::Dict{Symbol, Any} = Dict{Symbol, Any}(
-        :show_agent => true,
-        :show_objects => true,
-        :show_locations => true
-    )
+    state_options::Dict{Symbol, Any} =
+        default_state_options(GridworldRenderer)
     "Default options for trajectory rendering."
-    trajectory_options::Dict{Symbol, Any} = Dict{Symbol, Any}(
-        :agent_color => :black,
-        :step_markersize => 0.3,
-        :tracked_objects => Const[],
-        :object_colors => [],
-        :tracked_types => Symbol[],
-        :type_colors => [],
-    )
+    trajectory_options::Dict{Symbol, Any} =
+        default_trajectory_options(GridworldRenderer)
+    "Default options for animation rendering."
+    anim_options::Dict{Symbol, Any} =
+        default_anim_options(GridworldRenderer)
 end
 
 function new_canvas(renderer::GridworldRenderer)
@@ -72,3 +66,27 @@ include("trajectory.jl")
 include("path_search.jl")
 include("policy.jl")
 include("animate.jl")
+
+# Add documentation for auxiliary options
+@doc """
+$(@doc GridworldRenderer)
+
+# State options
+
+These options can be passed as keyword arguments to [`render_state`](@ref):
+
+$(Base.doc(default_state_options, Tuple{Type{GridworldRenderer}}))
+
+# Trajectory options
+
+These options can be passed as keyword arguments to [`render_trajectory`](@ref):
+
+$(Base.doc(default_trajectory_options, Tuple{Type{GridworldRenderer}}))
+
+# Animation options
+
+These options can be passed as keyword arguments to animation functions:
+
+$(Base.doc(default_anim_options, Tuple{Type{GridworldRenderer}}))
+"""
+GridworldRenderer

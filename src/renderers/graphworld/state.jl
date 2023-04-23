@@ -84,13 +84,13 @@ function render_state!(
     end
     # Define node and edge colors
     node_colors = @lift map(vertices($graph)) do v
-        v > n_locs ? get(options, :movable_node_color, to_color(:gray)) :
-                     get(options, :location_node_color, to_color(:black))
+        v > n_locs ? to_color(get(options, :movable_node_color, :gray)) :
+                     to_color(get(options, :location_node_color, :black))
     end
     edge_colors = @lift map(edges($graph)) do e
         e.src > n_locs || e.dst > n_locs ?
-            get(options, :movable_edge_color, to_color((:mediumpurple, 0.75))) :
-            get(options, :location_edge_color, to_color(:black))
+            to_color(get(options, :movable_edge_color, (:mediumpurple, 0.75))) :
+            to_color(get(options, :location_edge_color, :black))
     end
     # Render graph
     gp = graphplot!(ax, graph; layout=layout, node_color=node_colors,
@@ -135,3 +135,30 @@ function render_state!(
     ax.aspect = 1
     return canvas
 end
+
+"""
+- `show_location_graphics = true`: Whether to show location graphics.
+- `show_location_labels = true`: Whether to show location labels.
+- `show_movable_graphics = true`: Whether to show movable object graphics.
+- `show_movable_labels = true`: Whether to show movable object labels.
+- `show_edge_labels = false`: Whether to show edge labels.
+- `location_node_color = :black`: Color of location nodes.
+- `location_edge_color = :black`: Color of edges between locations.
+- `movable_node_color = :gray`: Color of movable object nodes.
+- `movable_edge_color = (:mediumpurple, 0.75)`: Color of edges between
+  locations and movable objects.
+- `label_offset_mult = 0.2`: Multiplier for the offset of labels from their
+  corresponding objects. Larger values move the labels further away.
+"""
+default_state_options(R::Type{GraphworldRenderer}) = Dict{Symbol,Any}(
+    :show_location_graphics => true,
+    :show_location_labels => true,
+    :show_movable_graphics => true,
+    :show_movable_labels => true,
+    :show_edge_labels => false,
+    :location_node_color => :black,
+    :location_edge_color => :black,
+    :movable_node_color => :gray,
+    :movable_edge_color => (:mediumpurple, 0.75),
+    :label_offset_mult => 0.2,
+)

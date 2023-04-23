@@ -99,3 +99,20 @@ function render_trajectory!(
     # Return the canvas
     return canvas
 end
+
+"""
+- `:agent_color = black`: Marker color of agent tracks.
+- `:tracked_objects = Const[]`: Moving objects to plot marker tracks for.
+- `:object_colors = Any[]`: Marker colors to use for tracked objects.
+- `:tracked_types = Symbol[]`: Types of objects to track.
+- `:type_colors = Any[]`: Marker colors to use for tracked object types.
+- `:step_markersize = 0.3`: Size of track markers.
+"""
+default_trajectory_options(R::Type{GridworldRenderer}) = Dict{Symbol,Any}(
+    :agent_color => :black,
+    :tracked_objects => Const[],
+    :object_colors => [],
+    :tracked_types => Symbol[],
+    :type_colors => [],
+    :step_markersize => 0.3,
+)

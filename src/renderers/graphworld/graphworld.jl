@@ -7,7 +7,7 @@ using GraphMakie.NetworkLayout: AbstractLayout
 
 Customizable renderer for domains with fixed locations connected in a graph.
 
-# Options
+# General options
 
 $(TYPEDFIELDS)
 """
@@ -32,14 +32,6 @@ $(TYPEDFIELDS)
     loc_renderers::Dict{Symbol, Function} = Dict{Symbol, Function}()
     "Per-type object renderers, of the form `(domain, state, obj) -> Graphic`."
     obj_renderers::Dict{Symbol, Function} = Dict{Symbol, Function}()
-    "Default options for state rendering."
-    state_options::Dict{Symbol, Any} = Dict{Symbol, Any}(
-        :show_location_graphics => true
-        :show_location_labels => true,
-        :show_movable_graphics => true
-        :show_movable_labels => true,
-        :label_offset_mult => 0.2,
-    )
     "Default options for graph rendering, passed to the `graphplot` recipe."
     graph_options::Dict{Symbol, Any} = Dict{Symbol, Any}(
         :node_size => 0.05,
@@ -48,6 +40,8 @@ $(TYPEDFIELDS)
         :nlabels_align => (:center, :center),
         :elabels_fontsize => 16,
     )
+    "Default options for state rendering."
+    state_options::Dict{Symbol, Any} = default_state_options(GraphworldRenderer)
 end
 
 function new_canvas(renderer::GraphworldRenderer)
@@ -57,3 +51,15 @@ function new_canvas(renderer::GraphworldRenderer)
 end
 
 include("state.jl")
+
+# Add documentation for auxiliary options
+@doc """
+$(@doc GraphworldRenderer)
+
+# State options
+
+These options can be passed as keyword arguments to [`render_state`](@ref):
+
+$(Base.doc(default_state_options, Tuple{Type{GraphworldRenderer}}))
+"""
+GraphworldRenderer

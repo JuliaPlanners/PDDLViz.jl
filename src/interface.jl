@@ -156,3 +156,11 @@ new_canvas(renderer::Renderer, axis::Axis) =
     Canvas(axis)
 new_canvas(renderer::Renderer, gridpos::GridPosition) =
     Canvas(gridpos)
+
+default_state_options(R::Type{<:Renderer}) = Dict{Symbol,Any}()
+
+default_plan_options(R::Type{<:Renderer}) = Dict{Symbol,Any}()
+
+default_trajectory_options(R::Type{<:Renderer}) = Dict{Symbol,Any}()
+
+default_anim_options(R::Type{<:Renderer}) = Dict{Symbol,Any}()

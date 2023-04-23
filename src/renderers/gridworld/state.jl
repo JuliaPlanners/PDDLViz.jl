@@ -148,3 +148,26 @@ function render_state!(
     # Return the canvas
     return canvas
 end
+
+"""
+- `show_agent::Bool = true`: Whether to show the agent.
+- `show_objects::Bool = true`: Whether to show objects.
+- `show_locations::Bool = true`: Whether to show locations.
+- `caption = nothing`: Caption to display below the figure.
+- `caption_font = :regular`: Font for the caption.
+- `caption_size = 24`: Font size for the caption.
+- `caption_color = :black`: Font color for the caption.
+- `caption_padding = 12`: Padding for the caption.
+- `caption_rotation = 0`: Rotation for the caption.
+"""
+default_state_options(R::Type{GridworldRenderer}) = Dict{Symbol,Any}(
+    :show_agent => true,
+    :show_objects => true,
+    :show_locations => true,
+    :caption => nothing,
+    :caption_font => :regular,
+    :caption_size => 24,
+    :caption_color => :black,
+    :caption_padding => 12,
+    :caption_rotation => 0
+)
