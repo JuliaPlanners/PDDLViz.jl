@@ -88,8 +88,9 @@ function anim_initialize!(
     if canvas.state === nothing
         render_state!(canvas, renderer, domain, state; kwargs...)
     else
-        canvas.state[] = state
+        anim_transition!(canvas, renderer, domain, state; kwargs...)
     end
+    callback !== nothing && callback(canvas)
     return canvas
 end
 

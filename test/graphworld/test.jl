@@ -63,4 +63,5 @@ plan = @pddl("(refuel plane1)", "(fly plane1 city0 city2)",
              "(board person1 plane1 city2)", "(fly plane1 city2 city1)",
              "(debark person1 plane1 city1)", "(fly plane1 city1 city2)")
 renderer.state_options[:show_edge_labels] = false
-anim = anim_plan("zeno_travel.mp4", renderer, domain, state, plan, framerate=1)
+anim = anim_plan(renderer, domain, state, plan, framerate=1)
+save("zeno_travel.mp4", anim)
