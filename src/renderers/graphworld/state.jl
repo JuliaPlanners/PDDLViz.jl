@@ -53,7 +53,8 @@ function render_state!(
                 push!(init_pos, loc_pos[nbs[1]])
             end
         end
-        Spring(; pin=loc_pos, initialpos=init_pos, C=0.3)
+        Spring(; pin=loc_pos, initialpos=init_pos,
+               C=get(options, :movable_spring_constant, 0.3))
     end
     # Define node and edge labels
     loc_labels = get(options, :show_location_labels, true) ?
@@ -147,6 +148,8 @@ end
 - `movable_node_color = :gray`: Color of movable object nodes.
 - `movable_edge_color = (:mediumpurple, 0.75)`: Color of edges between
   locations and movable objects.
+- `movable_spring_constant = 0.3`: Controls how much movable objects are
+  repelled from other nodes.
 - `label_offset_mult = 0.2`: Multiplier for the offset of labels from their
   corresponding objects. Larger values move the labels further away.
 """
@@ -160,5 +163,6 @@ default_state_options(R::Type{GraphworldRenderer}) = Dict{Symbol,Any}(
     :location_edge_color => :black,
     :movable_node_color => :gray,
     :movable_edge_color => (:mediumpurple, 0.75),
+    :movable_spring_constant => 0.3,
     :label_offset_mult => 0.2,
 )
