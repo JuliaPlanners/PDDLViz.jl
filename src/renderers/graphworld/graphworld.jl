@@ -12,6 +12,8 @@ Customizable renderer for domains with fixed locations connected in a graph.
 $(TYPEDFIELDS)
 """
 @kwdef mutable struct GraphworldRenderer <: Renderer
+    "Default figure resolution, in pixels."
+    resolution::Tuple{Int, Int} = (800, 800)
     "Function or `AbstractLayout` that maps a graph to node locations."
     graph_layout::Union{Function, AbstractLayout} = Stress()
     "Whether the graph edges are directed."
@@ -46,6 +48,12 @@ $(TYPEDFIELDS)
         :nlabels_align => (:center, :center),
         :elabels_fontsize => 16,
     )
+end
+
+function new_canvas(renderer::GraphworldRenderer)
+    figure = Figure(resolution=renderer.resolution)
+    axis = Axis(figure[1, 1])
+    return Canvas(figure, axis)
 end
 
 include("state.jl")

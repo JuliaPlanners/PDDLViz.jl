@@ -10,6 +10,8 @@ Customizable renderer for 2D gridworld domains.
 $(TYPEDFIELDS)
 """
 @kwdef mutable struct GridworldRenderer <: Renderer
+    "Default figure resolution, in pixels."
+    resolution::Tuple{Int, Int} = (800, 800)
     "PDDL fluents that represent the grid layers (walls, etc)."
     grid_fluents::Vector{Term} = [pddl"(walls)"]
     "Colors for each grid layer."
@@ -60,7 +62,7 @@ $(TYPEDFIELDS)
 end
 
 function new_canvas(renderer::GridworldRenderer)
-    figure = Figure(resolution=(800,800))
+    figure = Figure(resolution=renderer.resolution)
     layout = GridLayout(figure[1,1])
     return Canvas(figure, layout)
 end
