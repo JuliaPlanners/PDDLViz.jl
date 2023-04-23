@@ -1,6 +1,55 @@
 using Makie: to_color, ColorScheme
 using ColorTypes: RGBA, RGB, Colorant
 
+"Lighten a RGB(A) color by a given amount."
+function lighten(color::RGBA, amount::Real)
+    return RGBA(
+        color.r + (1 - color.r) * amount,
+        color.g + (1 - color.g) * amount,
+        color.b + (1 - color.b) * amount,
+        color.alpha
+    )
+end
+
+function lighten(color::RGB, amount::Real)
+    return RGB(
+        color.r + (1 - color.r) * amount,
+        color.g + (1 - color.g) * amount,
+        color.b + (1 - color.b) * amount
+    )
+end
+
+lighten(color, amount::Real) = lighten(to_color(color), amount)
+
+"Darken a RGB(A) color by a given amount."
+function darken(color::RGBA, amount::Real)
+    return RGBA(
+        color.r * (1 - amount),
+        color.g * (1 - amount),
+        color.b * (1 - amount),
+        color.alpha
+    )
+end
+
+function darken(color::RGB, amount::Real)
+    return RGB(
+        color.r * (1 - amount),
+        color.g * (1 - amount),
+        color.b * (1 - amount)
+    )
+end
+
+darken(color, amount::Real) = darken(to_color(color), amount)
+
+"Set the alpha value of a RGB(A) color."
+set_alpha(color::RGBA, alpha::Real) =
+    RGBA(color.r, color.g, color.b, alpha)
+set_alpha(color::RGB, alpha::Real) =
+    RGBA(color.r, color.g, color.b, alpha)
+set_alpha(color, alpha::Real) =
+    set_alpha(to_color(color), alpha)
+
+"A dictionary of `ColorScheme`s provided by PDDLViz."
 const colorschemes = Dict{Symbol, ColorScheme}()
 
 colorschemes[:vibrant] = ColorScheme([
@@ -14,22 +63,8 @@ colorschemes[:vibrant] = ColorScheme([
     colorant"#CC79A7"
 ])
 
-"Lighten a RGB(A) color by a given amount."
-function lighten(color::RGBA, amount::Real)
-    return RGBA(
-        color.r + (1 - color.r) * amount,
-        color.g + (1 - color.g) * amount,
-        color.b + (1 - color.b) * amount,
-        color.alpha
-    )
-end
+colorschemes[:vibrantlight] =
+    ColorScheme([lighten(c, 0.5) for c in colorschemes[:vibrant]])
 
-"Darken a RGB(A) color by a given amount."
-function darken(color::RGBA, amount::Real)
-    return RGBA(
-        color.r * (1 - amount),
-        color.g * (1 - amount),
-        color.b * (1 - amount),
-        color.alpha
-    )
-end
+colorschemes[:vibrantdark] =
+    ColorScheme([darken(c, 0.5) for c in colorschemes[:vibrant]])
