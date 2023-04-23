@@ -1,3 +1,4 @@
+export anim_initialize!, anim_transition!
 export anim_plan!, anim_trajectory!
 export anim_plan, anim_trajectory
 
@@ -70,6 +71,74 @@ function Base.show(io::IO, ::MIME"text/html", anim::Animation)
 end
 
 """
+    anim_initialize!(canvas, renderer, domain, state;
+                     callback=nothing, kwargs...)
+
+Initializes an animation that will be rendered on the `canvas`. Called by
+[`anim_plan`](@ref) and [`anim_trajectory`](@ref) as an initialization step.
+
+By default, this just renders the initial `state` on the `canvas`. This function
+can be overloaded for different [`Renderer`](@ref) types to implement custom
+initializations, e.g., to add captions or other overlays.
+"""
+function anim_initialize!(
+    canvas::Canvas, renderer::Renderer, domain::Domain, state::State;
+    callback=nothing, kwargs...
+)
+    if canvas.state === nothing
+        render_state!(canvas, renderer, domain, state; kwargs...)
+    else
+        canvas.state[] = state
+    end
+    return canvas
+end
+
+"""
+    anim_transition!(canvas, renderer, domain, state, [action, t];
+                     callback=nothing, kwargs...)
+
+Animates a transition from the current state stored in the `canvas` to the
+newly provided `state` (via `action` at timestep `t` if provided). Called by
+[`anim_plan`](@ref) and [`anim_trajectory`](@ref) to animate a series of
+state transitions.
+
+By default, this just updates the `canvas` with the new `state`, then runs the
+`callback` function (if provided) on `canvas` (e.g. to record a frame). This
+function can be overloaded for different [`Renderer`](@ref) types to implement
+custom transitions, e.g., transitions that involve multiple frames. 
+"""
+function anim_transition!(
+    canvas::Canvas, renderer::Renderer, domain::Domain,
+    state::State, action::Term, t::Int;
+    callback=nothing, kwargs...
+)
+    # Ignore timestep by default
+    return anim_transition!(canvas, renderer, domain, state, action;
+                            callback=callback, kwargs...)
+end
+
+function anim_transition!(
+    canvas::Canvas, renderer::Renderer, domain::Domain,
+    state::State, action::Term;
+    callback=nothing, kwargs...
+)
+    # Ignore action by default
+    return anim_transition!(canvas, renderer, domain, state;
+                            callback=callback, kwargs...)
+end
+
+function anim_transition!(
+    canvas::Canvas, renderer::Renderer, domain::Domain, state::State;
+    callback=nothing, kwargs...
+)
+    # Default to updating canvas with new state
+    canvas.state[] = state   
+    # Run callback
+    callback !== nothing && callback(canvas)
+    return canvas
+end
+
+"""
     anim_plan([path], renderer, domain, state, actions;
               format="mp4", framerate=5, show=false, options...)
               
@@ -98,33 +167,11 @@ end
 
 function anim_plan!(
     canvas::Canvas, renderer::Renderer, domain::Domain, state::State, actions;
-    format="mp4", framerate=5, show::Bool=is_displayed(canvas),
-    showrate=framerate, options...
+    kwargs...
 )
-    if canvas.state === nothing
-        render_state!(canvas, renderer, domain, state; options...)
-    else
-        canvas.state[] = state
-    end
-    if show && !is_displayed(canvas)
-        display(canvas)
-    end
-    record_args = filter(Dict(options)) do (k, v)
-        k in (:compression, :profile, :pixel_format)
-    end
-    vs = Record(canvas.figure; visible=is_displayed(canvas), format=format,
-                framerate=framerate, record_args...) do io
-        recordframe!(io)
-        for act in actions
-            canvas.state[] = PDDL.transition(domain, canvas.state[], act)
-            recordframe!(io)
-            if show
-                notify(canvas.state)
-                sleep(1/showrate)
-            end
-        end
-    end
-    return Animation(vs)
+    trajectory = PDDL.simulate(domain, state, actions)
+    return anim_trajectory!(canvas, renderer, domain,
+                            trajectory, actions; kwargs...)
 end
 
 function anim_plan!(path::AbstractString, args...; kwargs...)
@@ -135,10 +182,10 @@ end
 @doc (@doc anim_plan) anim_plan!
 
 """
-    anim_trajectory([path], renderer, domain, trajectory;
+    anim_trajectory([path], renderer, domain, trajectory, [actions];
                     format="mp4", framerate=5, show=false, options...)
                     
-    anim_trajectory!([path], canvas, renderer, domain, trajectory;
+    anim_trajectory!([path], canvas, renderer, domain, trajectory, [actions];
                      format="mp4", framerate=5, show=is_displayed(canvas),
                      options...)
 
@@ -148,7 +195,8 @@ saved to that file, and the `path` is returned. Otherwise, a [`Animation`](@ref)
 object is returned, which can be saved or displayed.
 """
 function anim_trajectory(
-    renderer::Renderer, domain::Domain, trajectory;
+    renderer::Renderer, domain::Domain,
+    trajectory, actions=fill(PDDL.no_op, length(trajectory)-1);
     show::Bool=false, kwargs...
 )
     canvas = new_canvas(renderer)
@@ -162,31 +210,36 @@ function anim_trajectory(path::AbstractString, args...; kwargs...)
 end
 
 function anim_trajectory!(
-    canvas::Canvas, renderer::Renderer, domain::Domain, trajectory;
+    canvas::Canvas, renderer::Renderer, domain::Domain,
+    trajectory, actions=fill(PDDL.no_op, length(trajectory)-1);
     format="mp4", framerate=5, show::Bool=is_displayed(canvas),
     showrate=framerate, options...
 )
-    if canvas.state === nothing
-        render_state!(canvas, renderer, domain, trajectory[1]; options...)
-    else
-        canvas.state[] = trajectory[1]
-    end
-    if show && !is_displayed(canvas)
-        display(canvas)
-    end
+    # Initialize animation
+    anim_initialize!(canvas, renderer, domain, trajectory[1]; options...)
+    # Display canvas if `show` is true
+    show && !is_displayed(canvas) && display(canvas)
+    # Record animation
     record_args = filter(Dict(options)) do (k, v)
         k in (:compression, :profile, :pixel_format)
     end
     vs = Record(canvas.figure; visible=is_displayed(canvas), format=format,
                 framerate=framerate, record_args...) do io
-        recordframe!(io)
-        for state in trajectory[2:end]
-            canvas.state[] = state
+        # Define callback for recording
+        function record_callback(canvas)
             recordframe!(io)
             if show
                 notify(canvas.state)
                 sleep(1/showrate)
             end
+        end
+        # Record initial state
+        recordframe!(io)
+        # Iterate over subsequent states and actions
+        for (t, act) in enumerate(actions)
+            state = trajectory[t+1]
+            anim_transition!(canvas, renderer, domain, state, act, t+1;
+                             callback=record_callback, options...)
         end
     end
     return Animation(vs)

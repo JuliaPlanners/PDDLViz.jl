@@ -1,4 +1,5 @@
 export Canvas, Renderer
+export new_canvas, save
 
 import Makie: Block
 import Makie.GridLayoutBase: GridLayoutBase, gridcontent

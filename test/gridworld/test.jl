@@ -59,7 +59,7 @@ canvas = renderer(domain, state, policy)
 
 # Animate plan
 plan = collect(sol)
-anim = anim_plan!(canvas, renderer, domain, state, plan)
+anim = anim_plan("doors_keys_gems.mp4", renderer, domain, state, plan)
 
 # Add controller
 canvas = renderer(domain, state)
