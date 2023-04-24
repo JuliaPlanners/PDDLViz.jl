@@ -2,6 +2,8 @@ export anim_initialize!, anim_transition!
 export anim_plan!, anim_trajectory!
 export anim_plan, anim_trajectory
 
+import Makie: FigureLike
+
 """
     Animation
 
@@ -15,6 +17,15 @@ end
 
 Animation(videostream::VideoStream) =
     Animation(videostream, videostream.path)
+
+Animation(figlike::FigureLike; kwargs...) =
+    Animation(VideoStream(figlike; kwargs...))
+
+Animation(canvas::Canvas; kwargs...) =
+    Animation(canvas.figure; kwargs...)
+
+Makie.recordframe!(anim::Animation) =
+    recordframe!(anim.videostream)
 
 function FileIO.save(path::AbstractString, anim::Animation; kwargs...)
     if anim.path == anim.videostream.path
