@@ -15,6 +15,7 @@ state = initstate(domain, problem)
 # Construct gridworld renderer
 gem_colors = PDDLViz.colorschemes[:vibrant]
 renderer = PDDLViz.GridworldRenderer(
+    resolution = (600, 700),
     agent_renderer = (d, s) -> HumanGraphic(color=:black),
     obj_renderers = Dict(
         :key => (d, s, o) -> KeyGraphic(
@@ -46,9 +47,8 @@ canvas = renderer(domain, trajectory)
 
 # Render path search solution
 planner = AStarPlanner(GoalCountHeuristic(), save_search=true,
-                       save_search_order=true, max_nodes=20)
-spec = Specification(problem)
-sol = planner(domain, state, spec)
+                       save_search_order=true, max_nodes=100)
+sol = planner(domain, state, pddl"(has gem2)")
 canvas = renderer(domain, state, sol)
 
 # Render policy solution
@@ -61,6 +61,15 @@ canvas = renderer(domain, state, policy)
 plan = collect(sol)
 anim = anim_plan(renderer, domain, state, plan)
 save("doors_keys_gems.mp4", anim)
+
+# Convert animation frames to storyboard
+storyboard = render_storyboard(
+    anim, [1, 14, 17, 24], figscale=0.75,
+    xlabels=["t=1", "t=14", "t=17", "t=24"],
+    subtitles=["(i) Initial state", "(ii) Agent picks up key",
+               "(iii) Agent unlocks door", "(iv) Agent picks up gem"],
+    xlabelsize=18, subtitlesize=22
+)
 
 # Add controller
 canvas = renderer(domain, state)

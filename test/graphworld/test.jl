@@ -65,3 +65,13 @@ plan = @pddl("(refuel plane1)", "(fly plane1 city0 city2)",
 renderer.state_options[:show_edge_labels] = false
 anim = anim_plan(renderer, domain, state, plan, framerate=1)
 save("zeno_travel.mp4", anim)
+
+# Convert animation frames to storyboard
+storyboard = render_storyboard(
+    anim, [1, 3, 4, 5, 6, 7], figscale=0.65, n_rows=2,
+    xlabels=["t=1", "t=3", "t=4", "t=5", "t=6", "t=7"],
+    subtitles=["(i) Initial state", "(ii) Plane flies to city 2",
+               "(iii) Person 1 boards plane", "(iv) Plane flies to city 1",
+               "(v) Person 1 debarks plane", "(vi) Plane flies back to city 2"],
+    xlabelsize=18, subtitlesize=22
+)
