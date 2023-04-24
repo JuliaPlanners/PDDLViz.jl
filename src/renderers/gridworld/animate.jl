@@ -1,6 +1,6 @@
 function anim_initialize!(
     canvas::Canvas, renderer::GridworldRenderer, domain::Domain, state::State;
-    callback=nothing, options...
+    callback=nothing, overlay=nothing, options...
 )
     options = merge(renderer.anim_options, options)
     if canvas.state === nothing
@@ -11,6 +11,8 @@ function anim_initialize!(
     else
         anim_transition!(canvas, renderer, domain, state; options...)
     end
+    # Run callbacks
+    overlay !== nothing && overlay(canvas)
     callback !== nothing && callback(canvas)
     return canvas
 end
@@ -18,7 +20,7 @@ end
 function anim_transition!(
     canvas::Canvas, renderer::GridworldRenderer, domain::Domain,
     state::State, action::Term = PDDL.no_op, t::Int = 1;
-    callback=nothing, options...
+    callback=nothing, overlay=nothing, options...
 )
     options = merge(renderer.anim_options, options)
     # Update canvas with new state
@@ -31,7 +33,8 @@ function anim_transition!(
             canvas.observables[:caption][] = caption
         end
     end
-    # Run callback
+    # Run callbacks
+    overlay !== nothing && overlay(canvas)
     callback !== nothing && callback(canvas)
     return canvas
 end

@@ -72,7 +72,7 @@ end
 
 """
     anim_initialize!(canvas, renderer, domain, state;
-                     callback=nothing, kwargs...)
+                     callback=nothing, overlay=nothing, kwargs...)
 
 Initializes an animation that will be rendered on the `canvas`. Called by
 [`anim_plan`](@ref) and [`anim_trajectory`](@ref) as an initialization step.
@@ -90,51 +90,56 @@ function anim_initialize!(
     else
         anim_transition!(canvas, renderer, domain, state; kwargs...)
     end
+    # Run callbacks
+    overlay !== nothing && overlay(canvas)
     callback !== nothing && callback(canvas)
     return canvas
 end
 
 """
     anim_transition!(canvas, renderer, domain, state, [action, t];
-                     callback=nothing, kwargs...)
+                     callback=nothing, overlay=nothing, kwargs...)
 
 Animates a transition from the current state stored in the `canvas` to the
 newly provided `state` (via `action` at timestep `t` if provided). Called by
 [`anim_plan`](@ref) and [`anim_trajectory`](@ref) to animate a series of
 state transitions.
 
-By default, this just updates the `canvas` with the new `state`, then runs the
-`callback` function (if provided) on `canvas` (e.g. to record a frame). This
-function can be overloaded for different [`Renderer`](@ref) types to implement
-custom transitions, e.g., transitions that involve multiple frames. 
+By default, this updates the `canvas` with the new `state`, then runs the
+`overlay` and `callback` functions (if provided) on `canvas` (e.g. to ovelay
+annotations, or to record a frame).
+    
+This function can be overloaded for different [`Renderer`](@ref) types to
+implement custom transitions, e.g., transitions that involve multiple frames. 
 """
 function anim_transition!(
     canvas::Canvas, renderer::Renderer, domain::Domain,
     state::State, action::Term, t::Int;
-    callback=nothing, kwargs...
+    callback=nothing, overlay=nothing, kwargs...
 )
     # Ignore timestep by default
     return anim_transition!(canvas, renderer, domain, state, action;
-                            callback=callback, kwargs...)
+                            callback=callback, overlay=overlay, kwargs...)
 end
 
 function anim_transition!(
     canvas::Canvas, renderer::Renderer, domain::Domain,
     state::State, action::Term;
-    callback=nothing, kwargs...
+    callback=nothing, overlay=nothing, kwargs...
 )
     # Ignore action by default
     return anim_transition!(canvas, renderer, domain, state;
-                            callback=callback, kwargs...)
+                            callback=callback, overlay=overlay, kwargs...)
 end
 
 function anim_transition!(
     canvas::Canvas, renderer::Renderer, domain::Domain, state::State;
-    callback=nothing, kwargs...
+    callback=nothing, overlay=nothing, kwargs...
 )
     # Default to updating canvas with new state
     canvas.state[] = state   
     # Run callback
+    overlay !== nothing && overlay(canvas)
     callback !== nothing && callback(canvas)
     return canvas
 end
