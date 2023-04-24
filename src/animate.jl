@@ -94,7 +94,7 @@ initializations, e.g., to add captions or other overlays.
 """
 function anim_initialize!(
     canvas::Canvas, renderer::Renderer, domain::Domain, state::State;
-    callback=nothing, kwargs...
+    callback=nothing, overlay=nothing, kwargs...
 )
     if canvas.state === nothing
         render_state!(canvas, renderer, domain, state; kwargs...)

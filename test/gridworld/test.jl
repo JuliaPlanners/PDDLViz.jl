@@ -59,7 +59,7 @@ canvas = renderer(domain, state, policy)
 
 # Animate plan
 plan = collect(sol)
-anim = anim_plan(renderer, domain, state, plan)
+anim = anim_plan(renderer, domain, state, plan; trail_length=10)
 save("doors_keys_gems.mp4", anim)
 
 # Convert animation frames to storyboard
