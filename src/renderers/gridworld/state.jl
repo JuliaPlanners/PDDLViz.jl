@@ -126,7 +126,8 @@ function render_state!(
                 graphicplot!(ax_i, graphic)
             end
             # Resize row
-            rowsize!(canvas.layout, i+1, Auto(1/inventory_size[]))
+            row_height = 1/height[] * width[]/inventory_size[]
+            rowsize!(canvas.layout, i+1, Auto(row_height))
         end
         rowgap!(canvas.layout, 10)
         resize_to_layout!(canvas.figure)
