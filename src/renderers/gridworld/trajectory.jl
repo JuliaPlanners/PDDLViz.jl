@@ -14,20 +14,16 @@ function render_trajectory!(
     # Determine set of objects to track
     state = trajectory[][1]
     objects = get(options, :tracked_objects, Const[])
-    obj_colors = get(options, :object_colors, Symbol[]) .|> to_color
-    obj_s_colors = get(options, :object_start_colors, obj_colors) .|> to_color
+    obj_colors = get(options, :object_colors, Symbol[]) .|> to_color_obs
+    obj_s_colors = get(options, :object_start_colors, obj_colors) .|> to_color_obs
     types = get(options, :tracked_types, Symbol[])
-    type_colors = get(options, :type_colors, Symbol[]) .|> to_color
-    type_s_colors = get(options, :type_start_colors, type_colors) .|> to_color
+    type_colors = get(options, :type_colors, Symbol[]) .|> to_color_obs
+    type_s_colors = get(options, :type_start_colors, type_colors) .|> to_color_obs
     for (ty, col, s_col) in zip(types, type_colors, type_s_colors)
         objs = PDDL.get_objects(domain, state, ty)
         append!(objects, objs)
-        cols = col isa ColorScheme ?
-            col[range(0, 1; length=length(objs))] : fill(col, length(objs))
-        append!(obj_colors, cols)
-        s_cols = s_col isa ColorScheme ?
-            s_col[range(0, 1; length=length(objs))] : fill(s_col, length(objs))
-        append!(obj_start_colors, s_cols)
+        append!(obj_colors, fill(col, length(objs)))
+        append!(obj_start_colors, fill(s_col, length(objs)))
     end
     # Construct observables for object locations and markers
     obj_locations = [Observable(Point2f[]) for _ in 1:length(objects)]
@@ -38,6 +34,8 @@ function render_trajectory!(
     markers = Observable(Char[])
     rotations = Observable(Float64[])
     # Fill observables
+    arrowmarker = get(options, :track_arrowmarker, '▶')
+    stopmarker = get(options, :track_stopmarker, '⦿')
     on(trajectory; update = true) do trajectory
         # Clear previous locations and markers
         for (ls, ms, rs) in zip(obj_locations, obj_markers, obj_rotations)
@@ -58,10 +56,10 @@ function render_trajectory!(
                 next_x = next_state[renderer.get_obj_x(obj)]
                 next_y = height - next_state[renderer.get_obj_y(obj)] + 1
                 if next_x == x && next_y == y
-                    push!(obj_markers[i][], '⦿')
+                    push!(obj_markers[i][], stopmarker)
                     push!(obj_rotations[i][], 0.0)
                 else
-                    push!(obj_markers[i][], '▶') 
+                    push!(obj_markers[i][], arrowmarker) 
                     push!(obj_rotations[i][], atan(next_y - y, next_x - x))
                 end
             end
@@ -73,10 +71,10 @@ function render_trajectory!(
             next_x = next_state[renderer.get_agent_x()]
             next_y = height - next_state[renderer.get_agent_y()] + 1
             if next_x == x && next_y == y
-                push!(markers[], '⦿') 
+                push!(markers[], stopmarker) 
                 push!(rotations[], 0.0)
             else
-                push!(markers[], '▶')
+                push!(markers[], arrowmarker)
                 push!(rotations[], atan(next_y - y, next_x - x))
             end
         end
@@ -88,17 +86,17 @@ function render_trajectory!(
             notify(locations); notify(markers); notify(rotations)
         end
     end
-    markersize = get(options, :step_markersize, 0.3)
+    markersize = get(options, :track_markersize, 0.3)
     # Plot agent locations over time
     if renderer.has_agent
-        stop_color = get(options, :agent_color, :black) |> to_color
-        start_color = get(options, :agent_start_color, stop_color) |> to_color
+        stop_color = get(options, :agent_color, :black) |> to_color_obs
+        start_color = get(options, :agent_start_color, stop_color) |> to_color_obs
         if start_color != stop_color
             color = @lift if length($trajectory) > 1
-                cmap = cgrad([start_color, stop_color])
+                cmap = cgrad([$start_color, $stop_color])
                 cmap[range(0, 1; length=length($trajectory))]
             else
-                [stop_color]
+                [$stop_color]
             end
         else
             color = stop_color
@@ -110,10 +108,10 @@ function render_trajectory!(
     for (i, (col1, col2)) in enumerate(zip(obj_s_colors, obj_colors))
         if col1 != col2
             color = @lift if length($trajectory) > 1
-                cmap = cgrad([col1, col2])
+                cmap = cgrad([$col1, $col2])
                 cmap[range(0, 1; length=length($trajectory))]
             else
-                [col2]
+                [$col2]
             end
         else
             color = col2
@@ -138,7 +136,9 @@ end
 - `:type_colors = Symbol[]`: Marker colors to use for tracked object types.
 - `:type_start_colors = type_colors`: Marker colors to use for tracked object
     types at the start of the trajectory, which fade into the main color.
-- `:step_markersize = 0.3`: Size of track markers.
+- `:track_arrowmarker = '▶'`: Marker to use for directed tracks.
+- `:track_stopmarker = '⦿'`: Marker to use for stationary tracks.
+- `:track_markersize = 0.3`: Size of track markers.
 """
 default_trajectory_options(R::Type{GridworldRenderer}) = Dict{Symbol,Any}(
     :agent_color => :black,
@@ -146,5 +146,7 @@ default_trajectory_options(R::Type{GridworldRenderer}) = Dict{Symbol,Any}(
     :object_colors => Symbol[],
     :tracked_types => Symbol[],
     :type_colors => Symbol[],
-    :step_markersize => 0.3,
+    :track_arrowmarker => '▶',
+    :track_stopmarker => '⦿',
+    :track_markersize => 0.3,
 )

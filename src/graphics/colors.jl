@@ -49,6 +49,12 @@ set_alpha(color::RGB, alpha::Real) =
 set_alpha(color, alpha::Real) =
     set_alpha(to_color(color), alpha)
 
+"Convert a color or observable to a `Observable{RGBA}`."
+to_color_obs(obs::Observable) =
+    obs[] isa RGBA ? obs : lift(x -> to_color(x), obs)
+to_color_obs(color) =
+    Observable(to_color(color))
+
 "A dictionary of `ColorScheme`s provided by PDDLViz."
 const colorschemes = Dict{Symbol, ColorScheme}()
 
