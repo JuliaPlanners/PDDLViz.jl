@@ -21,24 +21,20 @@ mutable struct Canvas
 end
 
 Canvas(figure::Figure) =
-    Canvas(figure, Block[], layout, nothing, Dict{Symbol,Observable}())
+    Canvas(figure, Block[], figure.layout, nothing, Dict{Symbol,Observable}())
 Canvas(figure::Figure, axis::Block) =
     Canvas(figure, Block[axis], gridcontent(axis).parent, nothing, Dict())
 Canvas(figure::Figure, layout::GridLayout) =
     Canvas(figure, Vector{Block}(contents(layout)), layout, nothing, Dict())
-Canvas(figure::Figure, layout::GridLayout, state::State) =
-    Canvas(figure, Vector{Block}(contents(layout)), layout,
-           Observable(state), Dict())
-Canvas(figure::Figure, layout::GridLayout, state::Observable{<:State}) =
-    Canvas(figure, Vector{Block}(contents(layout)),
-           layout, state, Dict{Symbol,Observable}())
+Canvas(figure::Figure, gp::GridPosition) =
+    Canvas(figure, Vector{Block}(contents(gp)), gp.layout, nothing, Dict())
 
 Canvas(axis::Block) =
     Canvas(axis.parent, axis)
 Canvas(layout::GridLayout) =
-    Canvas(GridLayoutBase.top_parent(gridpos), layout)
+    Canvas(GridLayoutBase.top_parent(layout), layout)
 Canvas(gridpos::GridPosition) =
-    Canvas(Makie.get_top_parent(gridpos), content(gridpos))
+    Canvas(Makie.get_top_parent(gridpos), gridpos)
 
 Base.showable(m::MIME"text/plain", canvas::Canvas) = true
 Base.showable(m::MIME, canvas::Canvas) = showable(m, canvas.figure)

@@ -71,6 +71,13 @@ storyboard = render_storyboard(
     xlabelsize=18, subtitlesize=22
 )
 
+# Construct multiple canvases on the same figure
+figure = Figure(resolution=(1200, 700))
+canvas1 = new_canvas(renderer, figure[1, 1])
+canvas2 = new_canvas(renderer, figure[1, 2])
+renderer(canvas1, domain, state)
+renderer(canvas2, domain, state, plan)
+
 # Add controller
 canvas = renderer(domain, state)
 controller = KeyboardController(

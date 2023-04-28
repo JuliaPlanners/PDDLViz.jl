@@ -11,7 +11,9 @@ function render_state!(
     ax = get(canvas.blocks, 1) do 
         _ax = Axis(canvas.layout[1,1], aspect=DataAspect(),
                    xzoomlock=true, xpanlock=true, xrectzoom=false,
-                   yzoomlock=true, ypanlock=true, yrectzoom=false)
+                   yzoomlock=true, ypanlock=true, yrectzoom=false,
+                   xgridstyle=:dash, ygridstyle=:dash,
+                   xgridcolor=:black, ygridcolor=:black)
         hidedecorations!(_ax, grid=false)
         push!(canvas.blocks, _ax)
         return _ax
@@ -30,8 +32,6 @@ function render_state!(
     # Set ticks to show grid
     map!(w -> (1:w-1) .+ 0.5, ax.xticks, width)
     map!(h -> (1:h-1) .+ 0.5, ax.yticks, height) 
-    ax.xgridcolor, ax.ygridcolor = :black, :black
-    ax.xgridstyle, ax.ygridstyle = :dash, :dash
     xlims!(ax, 0.5, width[] + 0.5)
     ylims!(ax, 0.5, height[] + 0.5)
     # Render locations
@@ -83,7 +83,9 @@ function render_state!(
                            title=title, titlealign=:left,
                            titlefont=:regular, titlesize=20,
                            xzoomlock=true, xpanlock=true, xrectzoom=false,
-                           yzoomlock=true, ypanlock=true, yrectzoom=false)
+                           yzoomlock=true, ypanlock=true, yrectzoom=false,
+                           xgridstyle=:solid, ygridstyle=:solid,
+                           xgridcolor=:black, ygridcolor=:black)
                 hidedecorations!(_ax, grid=false)
                 push!(canvas.blocks, _ax)
                 return _ax
@@ -98,8 +100,6 @@ function render_state!(
                 return ((0.5, w + 0.5), nothing)
             end
             ax_i.yticks = [0.5, 1.5]
-            ax_i.xgridcolor, ax_i.ygridcolor = :black, :black
-            ax_i.xgridstyle, ax_i.ygridstyle = :solid, :solid
             # Compute object locations
             obj_locs = @lift begin
                 locs = Int[]

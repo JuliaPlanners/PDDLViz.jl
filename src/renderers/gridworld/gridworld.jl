@@ -60,6 +60,10 @@ function new_canvas(renderer::GridworldRenderer)
     layout = GridLayout(figure[1,1])
     return Canvas(figure, layout)
 end
+new_canvas(renderer::GridworldRenderer, figure::Figure) =
+    Canvas(figure, GridLayout(figure[1,1]))
+new_canvas(renderer::GridworldRenderer, gridpos::GridPosition) =
+    Canvas(Makie.get_top_parent(gridpos), GridLayout(gridpos))
 
 include("state.jl")
 include("trajectory.jl")
