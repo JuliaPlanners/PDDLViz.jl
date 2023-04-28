@@ -1,12 +1,14 @@
 function render_state!(
     canvas::Canvas, renderer::GraphworldRenderer,
     domain::Domain, state::Observable;
-    options...
+    replace::Bool=true, options...
 )
     # Update options
     options = merge(renderer.state_options, options)
     # Set canvas state observable (replacing any previous state)
-    canvas.state = state
+    if replace || canvas.state === nothing
+        canvas.state = state
+    end
     # Extract or construct main axis
     ax = get(canvas.blocks, 1) do 
         _ax = Axis(canvas.layout[1,1], aspect=1)

@@ -1,12 +1,14 @@
 function render_state!(
     canvas::Canvas, renderer::GridworldRenderer,
     domain::Domain, state::Observable;
-    options...
+    replace::Bool=true, options...
 )
     # Update options
     options = merge(renderer.state_options, options)
     # Set canvas state observable (replacing any previous state)
-    canvas.state = state
+    if replace || canvas.state === nothing
+        canvas.state = state
+    end
     # Extract or construct main axis
     ax = get(canvas.blocks, 1) do 
         _ax = Axis(canvas.layout[1,1], aspect=DataAspect(),
@@ -23,11 +25,13 @@ function render_state!(
     height = @lift size($base_grid, 1)
     width = @lift size($base_grid, 2)
     # Render grid variables as heatmaps
-    for (i, grid_fluent) in enumerate(renderer.grid_fluents)
-        grid = @lift reverse(transpose(float($state[grid_fluent])), dims=2)
-        cmap = cgrad([:transparent, renderer.grid_colors[i]])
-        crange = @lift (min(minimum($grid), 0), max(maximum($grid), 1))
-        heatmap!(ax, grid, colormap=cmap, colorrange=crange)
+    if get(options, :show_grid, true)
+        for (i, grid_fluent) in enumerate(renderer.grid_fluents)
+            grid = @lift reverse(transpose(float($state[grid_fluent])), dims=2)
+            cmap = cgrad([:transparent, renderer.grid_colors[i]])
+            crange = @lift (min(minimum($grid), 0), max(maximum($grid), 1))
+            heatmap!(ax, grid, colormap=cmap, colorrange=crange)
+        end
     end
     # Set ticks to show grid
     map!(w -> (1:w-1) .+ 0.5, ax.xticks, width)
@@ -69,7 +73,7 @@ function render_state!(
         graphicplot!(ax, graphic)
     end
     # Render inventories
-    if renderer.show_inventory
+    if renderer.show_inventory && get(options, :show_inventory, true)
         colsize!(canvas.layout, 1, Auto(1))
         rowsize!(canvas.layout, 1, Auto(1))
         for (i, inventory_fn) in enumerate(renderer.inventory_fns)
@@ -151,9 +155,11 @@ function render_state!(
 end
 
 """
+- `show_grid::Bool = true`: Whether to show grid variables (walls, etc).
 - `show_agent::Bool = true`: Whether to show the agent.
 - `show_objects::Bool = true`: Whether to show objects.
 - `show_locations::Bool = true`: Whether to show locations.
+- `show_inventory::Bool = true`: Whether to show inventories.
 - `caption = nothing`: Caption to display below the figure.
 - `caption_font = :regular`: Font for the caption.
 - `caption_size = 24`: Font size for the caption.
@@ -162,9 +168,11 @@ end
 - `caption_rotation = 0`: Rotation for the caption.
 """
 default_state_options(R::Type{GridworldRenderer}) = Dict{Symbol,Any}(
+    :show_grid => true,
     :show_agent => true,
     :show_objects => true,
     :show_locations => true,
+    :show_inventory => true,
     :caption => nothing,
     :caption_font => :regular,
     :caption_size => 24,
