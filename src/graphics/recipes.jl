@@ -12,8 +12,9 @@ function Makie.plot!(plt::GraphicPlot{<:Tuple{BasicGraphic}})
     graphic = plt[:graphic]
     shape = @lift $graphic.shape
     attributes = Dict(plt.attributes)
-    local_attributes = Dict(
-        k => @lift($graphic.attributes[k])
+    local_attributes = Dict{Symbol, Any}(
+        k => graphic[].attributes[k] isa Observable ?
+            graphic[].attributes[k] : @lift($graphic.attributes[k])
         for k in keys(graphic[].attributes)
     )
     attributes = merge!(attributes, local_attributes)
@@ -31,8 +32,9 @@ end
 function Makie.plot!(plt::GraphicPlot{<:Tuple{MarkerGraphic}})
     graphic = plt[:graphic]
     attributes = Dict(plt.attributes)
-    local_attributes = Dict(
-        k => @lift($graphic.attributes[k])
+    local_attributes = Dict{Symbol, Any}(
+        k => graphic[].attributes[k] isa Observable ?
+            graphic[].attributes[k] : @lift($graphic.attributes[k])
         for k in keys(graphic[].attributes)
     )
     attributes = merge!(attributes, local_attributes)
@@ -47,8 +49,9 @@ end
 function Makie.plot!(plt::GraphicPlot{<:Tuple{TextGraphic}})
     graphic = plt[:graphic]
     attributes = Dict(plt.attributes)
-    local_attributes = Dict(
-        k => @lift($graphic.attributes[k])
+    local_attributes = Dict{Symbol, Any}(
+        k => graphic[].attributes[k] isa Observable ?
+            graphic[].attributes[k] : @lift($graphic.attributes[k])
         for k in keys(graphic[].attributes)
     )
     attributes = merge!(attributes, local_attributes)
@@ -62,8 +65,9 @@ end
 function Makie.plot!(plt::GraphicPlot{<:Tuple{MultiGraphic}})
     graphic = plt[:graphic]
     attributes = Dict(plt.attributes)
-    local_attributes = Dict(
-        k => @lift($graphic.attributes[k])
+    local_attributes = Dict{Symbol, Any}(
+        k => graphic[].attributes[k] isa Observable ?
+            graphic[].attributes[k] : @lift($graphic.attributes[k])
         for k in keys(graphic[].attributes)
     )
     attributes = merge!(attributes, local_attributes)

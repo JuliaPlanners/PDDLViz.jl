@@ -20,6 +20,7 @@ function lighten(color::RGB, amount::Real)
 end
 
 lighten(color, amount::Real) = lighten(to_color(color), amount)
+lighten(color::Observable, amount::Real) = lift(x -> lighten(x, amount), color)
 
 "Darken a RGB(A) color by a given amount."
 function darken(color::RGBA, amount::Real)
@@ -40,6 +41,7 @@ function darken(color::RGB, amount::Real)
 end
 
 darken(color, amount::Real) = darken(to_color(color), amount)
+darken(color::Observable, amount::Real) = lift(x -> darken(x, amount), color)
 
 "Set the alpha value of a RGB(A) color."
 set_alpha(color::RGBA, alpha::Real) =
@@ -48,6 +50,8 @@ set_alpha(color::RGB, alpha::Real) =
     RGBA(color.r, color.g, color.b, alpha)
 set_alpha(color, alpha::Real) =
     set_alpha(to_color(color), alpha)
+set_alpha(color::Observable, alpha::Real) =
+    lift(x -> set_alpha(x, alpha), color)
 
 "Convert a color or observable to a `Observable{RGBA}`."
 to_color_obs(obs::Observable) =
