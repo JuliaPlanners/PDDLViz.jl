@@ -1,6 +1,7 @@
 export anim_initialize!, anim_transition!
-export anim_plan!, anim_trajectory!
-export anim_plan, anim_trajectory
+export anim_plan!, anim_plan
+export anim_trajectory!, anim_trajectory
+export anim_solve!, anim_solve
 
 import Makie: FigureLike
 
@@ -200,11 +201,12 @@ end
 
 """
     anim_trajectory([path], renderer, domain, trajectory, [actions];
-                    format="mp4", framerate=5, show=false, options...)
+                    format="mp4", framerate=5, show=false,
+                    record_init=true, options...)
                     
     anim_trajectory!([path], canvas, renderer, domain, trajectory, [actions];
                      format="mp4", framerate=5, show=is_displayed(canvas),
-                     options...)
+                     record_init=true, options...)
 
 Uses `renderer` to animate a `trajectory` in a PDDL `domain` (updating the
 `canvas` if one is provided). If a `path` is specified, the animation is
@@ -230,36 +232,33 @@ function anim_trajectory!(
     canvas::Canvas, renderer::Renderer, domain::Domain,
     trajectory, actions=fill(PDDL.no_op, length(trajectory)-1);
     format="mp4", framerate=5, show::Bool=is_displayed(canvas),
-    showrate=framerate, options...
+    showrate=framerate, record_init=true, options...
 )
     # Initialize animation
     anim_initialize!(canvas, renderer, domain, trajectory[1]; options...)
     # Display canvas if `show` is true
     show && !is_displayed(canvas) && display(canvas)
-    # Record animation
+    # Initialize animation
     record_args = filter(Dict(options)) do (k, v)
         k in (:compression, :profile, :pixel_format)
     end
-    vs = Record(canvas.figure; visible=is_displayed(canvas), format=format,
-                framerate=framerate, record_args...) do io
-        # Define callback for recording
-        function record_callback(canvas)
-            recordframe!(io)
-            if show
-                notify(canvas.state)
-                sleep(1/showrate)
-            end
-        end
-        # Record initial state
-        recordframe!(io)
-        # Iterate over subsequent states and actions
-        for (t, act) in enumerate(actions)
-            state = trajectory[t+1]
-            anim_transition!(canvas, renderer, domain, state, act, t+1;
-                             callback=record_callback, options...)
-        end
+    anim = Animation(canvas.figure; visible=is_displayed(canvas), format=format,
+                     framerate=framerate, record_args...)
+    record_init && recordframe!(anim)
+    # Construct recording callback
+    function record_callback(canvas::Canvas)
+        recordframe!(anim)
+        !show && return
+        notify(canvas.state)
+        sleep(1/showrate)
     end
-    return Animation(vs)
+    # Iterate over subsequent states and actions
+    for (t, act) in enumerate(actions)
+        state = trajectory[t+1]
+        anim_transition!(canvas, renderer, domain, state, act, t+1;
+                         callback=record_callback, options...)
+    end
+    return anim
 end
 
 function anim_trajectory!(path::AbstractString, args...; kwargs...)
@@ -268,3 +267,107 @@ function anim_trajectory!(path::AbstractString, args...; kwargs...)
 end
 
 @doc (@doc anim_trajectory) anim_trajectory!
+
+"""
+    AnimSolveCallback{R <: Renderer}
+
+A callback for [`anim_solve`](@ref) that animates the solving process of a 
+SymbolicPlanners.jl [`Planner`]. The behavior of this callback can be customized
+on a per-renderer and per-`planner`` basis by defining a new method for 
+`(cb::AnimSolveCallback{R <: Renderer)(planner::Planner, args...)`.
+"""
+struct AnimSolveCallback{R <: Renderer} <: Function
+    renderer::R
+    domain::Domain
+    canvas::Canvas
+    sleep_dur::Float64
+    record_callback::Union{Nothing, Function}
+    options::Dict{Symbol, Any}
+end
+
+function AnimSolveCallback(
+    renderer::R, domain::Domain, canvas::Canvas,
+    sleep_dur::Real = 0.0, record_callback = nothing;
+    options...
+) where {R <: Renderer}
+    return AnimSolveCallback{R}(renderer, domain, canvas, sleep_dur,
+                                record_callback, Dict(options))
+end
+
+"""
+    anim_solve([path], renderer, planner, domain, state, spec;
+               format="mp4", framerate=25, show=false,
+               record_init=true, options...)
+
+    anim_solve!([path], canvas, renderer, planner, domain, state, spec;
+                format="mp4", framerate=25, show=is_displayed(canvas),
+                record_init=true, options...)
+
+Uses `renderer` to animate the solving process of a SymbolicPlanners.jl
+`planner` in a PDDL `domain` (updating the `canvas` if one is provided).
+
+Returns a tuple `(anim, sol)` where `anim` is an [`Animation`](@ref) object
+containing the animation, and `sol` is the solution returned by `planner`.
+If a `path` is specified, the animation is saved to that file, and `(path, sol)`
+is returned.
+"""
+function anim_solve(
+    renderer::Renderer, planner::Planner, domain::Domain, state::State, spec;
+    show::Bool=false, kwargs...
+)
+    canvas = new_canvas(renderer)
+    return anim_solve!(canvas, renderer, planner, domain, state, spec;
+                       show=show, kwargs...)
+end
+
+function anim_solve(path::AbstractString, args...; kwargs...)
+    format = lstrip(splitext(path)[2], '.')
+    anim, sol = anim_solve(args...; format=format, kwargs...)
+    save(path, anim)
+    return (path, sol)
+end
+
+function anim_solve!(
+    canvas::Canvas, renderer::Renderer,
+    planner::Planner, domain::Domain, state::State, spec;
+    format="mp4", framerate=25, show::Bool=true,
+    showrate=framerate, record_init=true, options...
+)
+    # Initialize animation
+    anim_initialize!(canvas, renderer, domain, state; options...)
+    # Display canvas if `show` is true
+    show && !is_displayed(canvas) && display(canvas)
+    # Initialize animation
+    record_args = filter(Dict(options)) do (k, v)
+        k in (:compression, :profile, :pixel_format)
+    end
+    anim = Animation(canvas.figure; visible=is_displayed(canvas), format=format,
+                     framerate=framerate, record_args...)
+    if record_init
+        recordframe!(anim)
+    end
+    # Construct recording callback
+    function record_callback(canvas::Canvas)
+        recordframe!(anim)
+        !show && return
+        notify(canvas.state)
+        sleep(1/showrate)
+    end
+    # Construct solve callback
+    solve_callback = AnimSolveCallback(renderer, domain, canvas, 0.0,
+                                       record_callback; options...)
+    # Run planner and return solution with animation
+    planner = copy(planner)
+    planner.callback = solve_callback
+    sol = SymbolicPlanners.solve(planner, domain, state, spec)
+    return (anim, sol)
+end
+
+function anim_solve!(path::AbstractString, args...; kwargs...)
+    format = lstrip(splitext(path)[2], '.')
+    anim, sol = anim_solve!(args...; format=format, kwargs...)
+    save(path, anim)
+    return (path, sol)
+end
+
+@doc (@doc anim_solve) anim_solve!

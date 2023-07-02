@@ -65,11 +65,17 @@ new_canvas(renderer::GridworldRenderer, figure::Figure) =
 new_canvas(renderer::GridworldRenderer, gridpos::GridPosition) =
     Canvas(Makie.get_top_parent(gridpos), GridLayout(gridpos))
 
+# State and trajectory rendering / animation
 include("state.jl")
 include("trajectory.jl")
+include("animate.jl")
+
+# Solution rendering
 include("path_search.jl")
 include("policy.jl")
-include("animate.jl")
+
+# Animated solving / planning
+include("anim_forward.jl")
 
 # Add documentation for auxiliary options
 Base.with_logger(Base.NullLogger()) do

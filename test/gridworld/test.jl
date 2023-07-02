@@ -46,21 +46,26 @@ trajectory = PDDL.simulate(domain, state, plan)
 canvas = renderer(domain, trajectory)
 
 # Render path search solution
-planner = AStarPlanner(GoalCountHeuristic(), save_search=true,
+astar = AStarPlanner(GoalCountHeuristic(), save_search=true,
                        save_search_order=true, max_nodes=100)
-sol = planner(domain, state, pddl"(has gem2)")
+sol = astar(domain, state, pddl"(has gem2)")
 canvas = renderer(domain, state, sol)
 
 # Render policy solution
 heuristic = PlannerHeuristic(AStarPlanner(GoalCountHeuristic(), max_nodes=20))
-planner = RTDP(heuristic=heuristic, n_rollouts=5, max_depth=20)
-policy = planner(domain, state, pddl"(has gem1)")
+rtdp = RTDP(heuristic=heuristic, n_rollouts=5, max_depth=20)
+policy = rtdp(domain, state, pddl"(has gem1)")
 canvas = renderer(domain, state, policy)
 
 # Animate plan
 plan = collect(sol)
 anim = anim_plan(renderer, domain, state, plan; trail_length=10)
 save("doors_keys_gems.mp4", anim)
+
+# Animate path search planning
+canvas = renderer(domain, state)
+sol_anim, sol = anim_solve!(canvas, renderer, astar,
+                            domain, state, pddl"(has gem2)")
 
 # Convert animation frames to storyboard
 storyboard = render_storyboard(
