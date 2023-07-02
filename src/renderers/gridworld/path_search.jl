@@ -75,17 +75,32 @@ function render_sol!(
             end
         end
         # Create arrow plots for agent and tracked objects
-        arrowsize = get(options, :search_size, 0.2)
+        node_marker = get(options, :search_marker, '⦿') 
+        node_size = get(options, :search_size, 0.3)
+        edge_arrow = get(options, :search_arrow, '▷')  
         colors = @lift isempty($sol.search_order) ?
             get(options, :search_color, :red) : 1:length($agent_locs)
         cmap = get(options, :search_colormap, cgrad([:blue, :red]))
         arrows!(ax, agent_locs, agent_dirs; colormap=cmap, color=colors,
-                arrowsize=arrowsize, markerspace=:data)
+                arrowsize=node_size, arrowhead=node_marker, markerspace=:data)
+        edge_locs = @lift $agent_locs .+ ($agent_dirs .* 0.5)
+        edge_rotations = @lift [atan(d[2], d[1]) for d in $agent_dirs]
+        edge_markers = @lift Char[d == Point2f(0, 0) ? node_marker : edge_arrow
+                                  for d in $agent_dirs]
+        scatter!(ax, edge_locs, marker=edge_markers, rotation=edge_rotations,
+                 markersize=node_size, markerspace=:data, 
+                 colormap=cmap, color=colors)
         for (ls, ds) in zip(obj_locs, obj_dirs)
             colors = @lift isempty($sol.search_order) ?
                 get(options, :search_color, :red) : 1:length($ls)
-            arrows!(ax, ls, ds; colormap=cmap, color=colors,
-                    arrowsize=arrowsize, markerspace=:data)
+            arrows!(ax, ls, ds; colormap=cmap, color=colors, markerspace=:data,
+                    arrowsize=node_size, arrowhead=node_marker)
+            e_ls = @lift $ls .+ ($ds .* 0.5)
+            e_rs = @lift [atan(d[2], d[1]) for d in $ds]
+            e_ms = @lift Char[d == Point2f(0, 0) ? node_marker : edge_arrow 
+                              for d in $ds]
+            scatter!(ax, e_ls, marker=e_ms, rotation=e_rs, markersize=node_size,
+                     markerspace=:data, colormap=cmap, color=colors)
         end
     end
     # Render trajectory
