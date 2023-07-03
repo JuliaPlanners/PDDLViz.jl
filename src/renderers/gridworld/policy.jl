@@ -20,7 +20,7 @@ function render_sol!(
     agent_rotations = Observable(Float64[])
     agent_values = Observable(Float64[])
     # Update observables for reachable states
-    on(sol; update=true) do sol
+    onany(sol, state) do sol, init_state
         # Clear previous values
         if renderer.has_agent
             empty!(agent_locs[])
@@ -29,7 +29,7 @@ function render_sol!(
             empty!(agent_values[])
         end
         # Iterate over reachable states up to limit
-        queue = [state[]]
+        queue = [init_state]
         visited = Set{UInt}()
         while !isempty(queue) && length(visited) < max_states
             state = popfirst!(queue)
@@ -68,6 +68,7 @@ function render_sol!(
             notify(agent_values)
         end
     end
+    notify(sol)
     # Render policy information
     if renderer.has_agent
         # Render state value heatmap
@@ -77,7 +78,8 @@ function render_sol!(
             cmap = get(options, :value_colormap) do 
                 cgrad(Makie.ColorSchemes.viridis, alpha=0.5)
             end
-            heatmap!(ax, xs, ys, agent_values; colormap=cmap)
+            plt = heatmap!(ax, xs, ys, agent_values; colormap=cmap)
+            Makie.translate!(plt, 0.0, 0.0, -0.5)
         end
         # Render best actions at each location
         if get(options, :show_actions, true)

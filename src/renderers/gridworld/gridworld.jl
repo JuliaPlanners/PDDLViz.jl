@@ -94,6 +94,7 @@ include("policy.jl")
 
 # Animated solving / planning
 include("anim_forward.jl")
+include("anim_rtdp.jl")
 
 # Add documentation for auxiliary options
 Base.with_logger(Base.NullLogger()) do

@@ -330,7 +330,7 @@ end
 function anim_solve!(
     canvas::Canvas, renderer::Renderer,
     planner::Planner, domain::Domain, state::State, spec;
-    format="mp4", framerate=25, show::Bool=true,
+    format="mp4", framerate=30, show::Bool=true,
     showrate=framerate, record_init=true, options...
 )
     # Initialize animation
