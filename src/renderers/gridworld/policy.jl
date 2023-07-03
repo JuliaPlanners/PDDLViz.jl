@@ -80,21 +80,25 @@ function render_sol!(
             end
             plt = heatmap!(ax, xs, ys, agent_values; colormap=cmap)
             Makie.translate!(plt, 0.0, 0.0, -0.5)
+            canvas.plots[:policy_values] = plt
         end
         # Render best actions at each location
         if get(options, :show_actions, true)
             markersize = get(options, :track_markersize, 0.3)
             color = get(options, :agent_color, :black)
-            scatter!(ax, agent_locs, marker=agent_markers,
-                     rotations=agent_rotations, markersize=markersize,
-                     color=color, markerspace=:data)
+            plt = scatter!(ax, agent_locs, marker=agent_markers,
+                           rotations=agent_rotations, markersize=markersize,
+                           color=color, markerspace=:data)
+            canvas.plots[:policy_actions] = plt
         end
         # Render state value labels at each location
         if get(options, :show_value_labels, true)
             label_locs = @lift $agent_locs .+ Point2f(0.0, 0.25)
             labels = @lift string.($agent_values)
-            text!(ax, label_locs; text=labels, color=:black,
-                  fontsize=0.2, markerspace=:data, align=(:center, :center))
+            plt = text!(ax, label_locs; text=labels, color=:black,
+                        fontsize=0.2, markerspace=:data,
+                        align=(:center, :center))
+            canvas.plots[:policy_value_labels] = plt
         end
     end
     return canvas

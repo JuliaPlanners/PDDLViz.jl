@@ -1,7 +1,7 @@
 export Canvas, Renderer
 export new_canvas, save
 
-import Makie: Block
+import Makie: Block, AbstractPlot
 import Makie.GridLayoutBase: GridLayoutBase, gridcontent
 
 """
@@ -18,16 +18,22 @@ mutable struct Canvas
     layout::GridLayout
     state::Union{Nothing,Observable}
     observables::Dict{Symbol,Observable}
+    plots::Dict{Symbol,AbstractPlot}
+end
+
+function Canvas(figure::Figure, blocks::Vector{Block}, layout::GridLayout)
+    return Canvas(figure, blocks, layout, nothing,
+                  Dict{Symbol,Observable}(), Dict{Symbol,AbstractPlot}())
 end
 
 Canvas(figure::Figure) =
-    Canvas(figure, Block[], figure.layout, nothing, Dict{Symbol,Observable}())
+    Canvas(figure, Block[], figure.layout)
 Canvas(figure::Figure, axis::Block) =
-    Canvas(figure, Block[axis], gridcontent(axis).parent, nothing, Dict())
+    Canvas(figure, Block[axis], gridcontent(axis).parent)
 Canvas(figure::Figure, layout::GridLayout) =
-    Canvas(figure, Vector{Block}(contents(layout)), layout, nothing, Dict())
+    Canvas(figure, Vector{Block}(contents(layout)), layout)
 Canvas(figure::Figure, gp::GridPosition) =
-    Canvas(figure, Vector{Block}(contents(gp)), gp.layout, nothing, Dict())
+    Canvas(figure, Vector{Block}(contents(gp)), gp.layout)
 
 Canvas(axis::Block) =
     Canvas(axis.parent, axis)

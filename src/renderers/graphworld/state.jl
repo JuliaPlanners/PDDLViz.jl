@@ -99,6 +99,7 @@ function render_state!(
     gp = graphplot!(ax, graph; layout=layout, node_color=node_colors,
                     nlabels=node_labels, elabels=edge_labels,
                     edge_color=edge_colors, renderer.graph_options...)
+    canvas.plots[:graph] = gp
     # Update node label offsets
     offset_mult = get(options, :label_offset_mult, 0.2)
     map!(gp.nlabels_offset, gp.node_pos) do node_pos
@@ -116,7 +117,8 @@ function render_state!(
                 pos = $(gp.node_pos)[i]
                 translate(r(domain, $state, loc), pos[1], pos[2])
             end
-            graphicplot!(ax, graphic)
+            plt = graphicplot!(ax, graphic)
+            canvas.plots[Symbol("$(loc)_graphic")] = plt
         end
     end
     # Render movable object graphics
@@ -129,7 +131,8 @@ function render_state!(
                 pos = $(gp.node_pos)[n_locs + i]
                 translate(r(domain, $state, obj), pos[1], pos[2])
             end
-            graphicplot!(ax, graphic)
+            plt = graphicplot!(ax, graphic)
+            canvas.plots[Symbol("$(obj)_graphic")] = plt
         end
     end
     # Final axis modifications

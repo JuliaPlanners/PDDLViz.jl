@@ -80,30 +80,38 @@ function render_sol!(
         if renderer.has_agent
             colors = @lift isempty($sol.search_order) ?
                 get(options, :search_color, :red) : 1:length($agent_locs)
-            arrows!(ax, agent_locs, agent_dirs; colormap=cmap, color=colors,
-                    arrowsize=node_size, arrowhead=node_marker,
-                    markerspace=:data, align=:head)
+            canvas.plots[:agent_search_nodes] = arrows!(
+                ax, agent_locs, agent_dirs, colormap=cmap, color=colors,
+                arrowsize=node_size, arrowhead=node_marker,
+                markerspace=:data, align=:head
+            )
             edge_locs = @lift $agent_locs .- ($agent_dirs .* 0.5)
             edge_rotations = @lift [atan(d[2], d[1]) for d in $agent_dirs]
             edge_markers = @lift map($agent_dirs) do d
                 d == Point2f(0, 0) ? node_marker : edge_arrow
             end
-            scatter!(ax, edge_locs, marker=edge_markers, rotation=edge_rotations,
-                    markersize=node_size, markerspace=:data, 
-                    colormap=cmap, color=colors)
+            canvas.plots[:agent_search_arrows] = scatter!(
+                ax, edge_locs, rotation=edge_rotations,
+                marker=edge_markers, markersize=node_size, markerspace=:data,
+                colormap=cmap, color=colors
+            )
         end
-        for (ls, ds) in zip(obj_locs, obj_dirs)
+        for (obj, ls, ds) in zip(objects, obj_locs, obj_dirs)
             colors = @lift isempty($sol.search_order) ?
                 get(options, :search_color, :red) : 1:length($ls)
-            arrows!(ax, ls, ds; colormap=cmap, color=colors, markerspace=:data,
-                    arrowsize=node_size, arrowhead=node_marker, align=:head)
+            canvas.plots[Symbol("$(obj)_search_nodes")] = arrows!(
+                ax, ls, ds, colormap=cmap, color=colors, markerspace=:data,
+                arrowsize=node_size, arrowhead=node_marker, align=:head
+            )
             e_ls = @lift $ls .- ($ds .* 0.5)
             e_rs = @lift [atan(d[2], d[1]) for d in $ds]
             e_ms = @lift map($ds) do d
                 d == Point2f(0, 0) ? node_marker : edge_arrow
             end
-            scatter!(ax, e_ls, marker=e_ms, rotation=e_rs, markersize=node_size,
-                     markerspace=:data, colormap=cmap, color=colors)
+            canvas.plots[Symbol("$(obj)_search_arrows")] = scatter!(
+                ax, e_ls, rotation=e_rs, marker=e_ms, markersize=node_size,
+                markerspace=:data, colormap=cmap, color=colors
+            )
         end
     end
     # Render trajectory

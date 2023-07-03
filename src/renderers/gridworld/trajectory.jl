@@ -92,8 +92,9 @@ function render_trajectory!(
         else
             color = stop_color
         end
-        scatter!(ax, locations, marker=markers, rotations=rotations,
-                 markersize=markersize, color=color, markerspace=:data)
+        plt= scatter!(ax, locations, marker=markers, rotations=rotations,
+                      markersize=markersize, color=color, markerspace=:data)
+        canvas.plots[:agent_trajectory] = plt
     end
     # Plot tracked object locations over time
     for (i, (col1, col2)) in enumerate(zip(obj_s_colors, obj_colors))
@@ -107,9 +108,10 @@ function render_trajectory!(
         else
             color = col2
         end
-        scatter!(ax, obj_locations[i], marker=obj_markers[i],
-                 rotations=obj_rotations[i], markersize=markersize,
-                 color=color, markerspace=:data)
+        plt = scatter!(ax, obj_locations[i], marker=obj_markers[i],
+                       rotations=obj_rotations[i], markersize=markersize,
+                       color=color, markerspace=:data)
+        canvas.plots[Symbol("$(objects[i])_trajectory")] = plt
     end
     # Return the canvas
     return canvas

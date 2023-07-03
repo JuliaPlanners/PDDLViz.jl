@@ -53,41 +53,45 @@ function (cb::AnimSolveCallback{GridworldRenderer})(
         push!(obj_dirs[i][], loc .- prev_loc)
     end
     # Render search tree if necessary
-    if sol.expanded == 1
-        ax = canvas.blocks[1]
-        node_marker = get(options, :search_marker, '⦿') 
-        node_size = get(options, :search_size, 0.3)
-        edge_arrow = get(options, :search_arrow, '▷')  
-        cmap = get(options, :search_colormap, cgrad([:blue, :red]))
-        if renderer.has_agent
-            colors = @lift 1:length($agent_locs)
-            arrows!(ax, agent_locs, agent_dirs; color=colors, colormap=cmap,
-                    arrowsize=node_size, arrowhead=node_marker,
-                    markerspace=:data, align=:head)
-            edge_locs = @lift $agent_locs .- ($agent_dirs .* 0.5)
-            edge_rotations = @lift [atan(d[2], d[1]) for d in $agent_dirs]
-            edge_markers = @lift map($agent_dirs) do d
-                d == Point2f(0, 0) ? node_marker : edge_arrow
-            end
-            scatter!(ax, edge_locs, 
-                     marker=edge_markers, rotation=edge_rotations,
-                     markersize=node_size, markerspace=:data,
-                     color=colors, colormap=cmap)
+    ax = canvas.blocks[1]
+    node_marker = get(options, :search_marker, '⦿') 
+    node_size = get(options, :search_size, 0.3)
+    edge_arrow = get(options, :search_arrow, '▷')  
+    cmap = get(options, :search_colormap, cgrad([:blue, :red]))
+    if renderer.has_agent && !haskey(canvas.plots, :agent_search_nodes)
+        colors = @lift 1:length($agent_locs)
+        canvas.plots[:agent_search_nodes] = arrows!(
+            ax, agent_locs, agent_dirs, color=colors, colormap=cmap,
+            arrowsize=node_size, arrowhead=node_marker,
+            markerspace=:data, align=:head
+        )
+        edge_locs = @lift $agent_locs .- ($agent_dirs .* 0.5)
+        edge_rotations = @lift [atan(d[2], d[1]) for d in $agent_dirs]
+        edge_markers = @lift map($agent_dirs) do d
+            d == Point2f(0, 0) ? node_marker : edge_arrow
         end
-        for (ls, ds) in zip(obj_locs, obj_dirs)
-            colors = @lift 1:length($ls)
-            arrows!(ax, ls, ds; colormap=cmap, color=colors, 
-                    arrowsize=node_size, arrowhead=node_marker,
-                    markerspace=:data, align=:head)
-            e_ls = @lift $ls .- ($ds .* 0.5)
-            e_rs = @lift [atan(d[2], d[1]) for d in $ds]
-            e_ms = @lift map($ds) do d
-                d == Point2f(0, 0) ? node_marker : edge_arrow
-            end
-            scatter!(ax, e_ls, marker=e_ms, rotation=e_rs,
-                    markersize=node_size, markerspace=:data,
-                    colormap=cmap, color=colors)
-        end    
+        canvas.plots[:agent_search_arrows] = scatter!(
+            ax, edge_locs, rotation=edge_rotations,
+            marker=edge_markers, markersize=node_size, markerspace=:data,
+            color=colors, colormap=cmap
+        )
+    end
+    for (obj, ls, ds) in zip(objects, obj_locs, obj_dirs)
+        haskey(canvas.plots, Symbol("$(obj)_search_nodes")) && continue
+        colors = @lift 1:length($ls)
+        canvas.plots[Symbol("$(obj)_search_nodes")] = arrows!(
+            ax, ls, ds, colormap=cmap, color=colors, markerspace=:data,
+            arrowsize=node_size, arrowhead=node_marker, align=:head
+        )
+        e_ls = @lift $ls .- ($ds .* 0.5)
+        e_rs = @lift [atan(d[2], d[1]) for d in $ds]
+        e_ms = @lift map($ds) do d
+            d == Point2f(0, 0) ? node_marker : edge_arrow
+        end
+        canvas.plots[Symbol("$(obj)_search_arrows")] = scatter!(
+            ax, e_ls, rotation=e_rs, marker=e_ms, markersize=node_size,
+            markerspace=:data, colormap=cmap, color=colors
+        )
     end
     # Trigger updates
     if renderer.has_agent

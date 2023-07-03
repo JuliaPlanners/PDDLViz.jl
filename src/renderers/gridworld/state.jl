@@ -30,7 +30,8 @@ function render_state!(
             grid = @lift reverse(transpose(float($state[grid_fluent])), dims=2)
             cmap = cgrad([:transparent, renderer.grid_colors[i]])
             crange = @lift (min(minimum($grid), 0), max(maximum($grid), 1))
-            heatmap!(ax, grid, colormap=cmap, colorrange=crange)
+            plt = heatmap!(ax, grid, colormap=cmap, colorrange=crange)
+            canvas.plots[Symbol("grid_$(grid_fluent)")] = plt
         end
     end
     # Set ticks to show grid
@@ -58,7 +59,8 @@ function render_state!(
                     x, y = gw_obj_loc(renderer, $state, obj, $height)
                     translate(r(domain, $state, obj), x, y)
                 end
-                graphicplot!(ax, graphic)
+                plt = graphicplot!(ax, graphic)
+                canvas.plots[Symbol("$(obj)_graphic")] = plt
            end
         end
     end
@@ -68,7 +70,8 @@ function render_state!(
             x, y = gw_agent_loc(renderer, $state, $height)
             translate(renderer.agent_renderer(domain, $state), x, y)
         end
-        graphicplot!(ax, graphic)
+        plt = graphicplot!(ax, graphic)
+        canvas.plots[:agent_graphic] = plt
     end
     # Render inventories
     if renderer.show_inventory && get(options, :show_inventory, true)
