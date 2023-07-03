@@ -353,12 +353,11 @@ function anim_solve!(
         notify(canvas.state)
         sleep(1/showrate)
     end
-    # Construct solve callback
-    solve_callback = AnimSolveCallback(renderer, domain, canvas, 0.0,
-                                       record_callback; options...)
+    # Construct animation callback
+    anim_callback = AnimSolveCallback(renderer, domain, canvas, 0.0,
+                                      record_callback; options...)
     # Run planner and return solution with animation
-    planner = copy(planner)
-    planner.callback = solve_callback
+    planner = add_anim_callback(planner, anim_callback)
     sol = SymbolicPlanners.solve(planner, domain, state, spec)
     return (anim, sol)
 end
@@ -371,3 +370,19 @@ function anim_solve!(path::AbstractString, args...; kwargs...)
 end
 
 @doc (@doc anim_solve) anim_solve!
+
+function add_anim_callback(planner::Planner, cb::AnimSolveCallback)
+    planner = copy(planner)
+    planner.callback = cb
+    return planner
+end
+
+function add_anim_callback(planner::RTHS, cb::AnimSolveCallback)
+    # Set top-level callback
+    planner = copy(planner)
+    planner.callback = cb
+    # Set callback for internal forward-search planner
+    planner.planner = copy(planner.planner)
+    planner.planner.callback = cb
+    return planner
+end

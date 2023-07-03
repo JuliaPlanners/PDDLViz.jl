@@ -47,8 +47,8 @@ function (cb::AnimSolveCallback{GridworldRenderer})(
             empty!(obj_locs[i][])
             empty!(obj_dirs[i][])
         end
-        loc = gw_object_loc(renderer, state, obj, height)
-        prev_loc = gw_object_loc(renderer, prev_state, obj, height)
+        loc = gw_obj_loc(renderer, state, obj, height)
+        prev_loc = gw_obj_loc(renderer, prev_state, obj, height)
         push!(obj_locs[i][], loc)
         push!(obj_dirs[i][], loc .- prev_loc)
     end

@@ -66,11 +66,20 @@ save("doors_keys_gems.mp4", anim)
 canvas = renderer(domain, state)
 sol_anim, sol = anim_solve!(canvas, renderer, astar,
                             domain, state, pddl"(has gem1)")
+save("doors_keys_gems_astar.mp4", sol_anim)
 
 # Animate RTDP planning
 canvas = renderer(domain, state)
 sol_anim, sol = anim_solve!(canvas, renderer, rtdp,
                             domain, state, pddl"(has gem2)")
+save("doors_keys_gems_rtdp.mp4", sol_anim)
+
+# Animate RTHS planning
+rths = RTHS(GoalCountHeuristic(), n_iters=5, max_nodes=15)
+canvas = renderer(domain, state)
+sol_anim, sol = anim_solve!(canvas, renderer, rths,
+                            domain, state, pddl"(has gem1)")
+save("doors_keys_gems_rths.mp4", sol_anim)
 
 # Convert animation frames to storyboard
 storyboard = render_storyboard(

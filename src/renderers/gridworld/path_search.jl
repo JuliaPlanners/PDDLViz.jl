@@ -58,8 +58,8 @@ function render_sol!(
                 end
                 # Update object observables
                 for (i, obj) in enumerate(objects)
-                    loc = gw_object_loc(renderer, state, obj, height)
-                    prev_loc = gw_object_loc(renderer, prev_state, obj, height)
+                    loc = gw_obj_loc(renderer, state, obj, height)
+                    prev_loc = gw_obj_loc(renderer, prev_state, obj, height)
                     push!(obj_locs[i][], loc)
                     push!(obj_dirs[i][], loc .- prev_loc)
                 end
