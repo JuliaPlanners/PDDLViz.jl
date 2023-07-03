@@ -53,14 +53,14 @@ function render_sol!(
                 if renderer.has_agent
                     loc = gw_agent_loc(renderer, state, height)
                     prev_loc = gw_agent_loc(renderer, prev_state, height)
-                    push!(agent_locs[], prev_loc)
+                    push!(agent_locs[], loc)
                     push!(agent_dirs[], loc .- prev_loc)
                 end
                 # Update object observables
                 for (i, obj) in enumerate(objects)
                     loc = gw_object_loc(renderer, state, obj, height)
                     prev_loc = gw_object_loc(renderer, prev_state, obj, height)
-                    push!(obj_locs[i][], prev_loc)
+                    push!(obj_locs[i][], loc)
                     push!(obj_dirs[i][], loc .- prev_loc)
                 end
             end
@@ -82,8 +82,8 @@ function render_sol!(
                 get(options, :search_color, :red) : 1:length($agent_locs)
             arrows!(ax, agent_locs, agent_dirs; colormap=cmap, color=colors,
                     arrowsize=node_size, arrowhead=node_marker,
-                    markerspace=:data)
-            edge_locs = @lift $agent_locs .+ ($agent_dirs .* 0.5)
+                    markerspace=:data, align=:head)
+            edge_locs = @lift $agent_locs .- ($agent_dirs .* 0.5)
             edge_rotations = @lift [atan(d[2], d[1]) for d in $agent_dirs]
             edge_markers = @lift map($agent_dirs) do d
                 d == Point2f(0, 0) ? node_marker : edge_arrow
@@ -96,8 +96,8 @@ function render_sol!(
             colors = @lift isempty($sol.search_order) ?
                 get(options, :search_color, :red) : 1:length($ls)
             arrows!(ax, ls, ds; colormap=cmap, color=colors, markerspace=:data,
-                    arrowsize=node_size, arrowhead=node_marker)
-            e_ls = @lift $ls .+ ($ds .* 0.5)
+                    arrowsize=node_size, arrowhead=node_marker, align=:head)
+            e_ls = @lift $ls .- ($ds .* 0.5)
             e_rs = @lift [atan(d[2], d[1]) for d in $ds]
             e_ms = @lift map($ds) do d
                 d == Point2f(0, 0) ? node_marker : edge_arrow
