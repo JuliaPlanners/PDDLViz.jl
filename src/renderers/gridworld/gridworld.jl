@@ -65,6 +65,24 @@ new_canvas(renderer::GridworldRenderer, figure::Figure) =
 new_canvas(renderer::GridworldRenderer, gridpos::GridPosition) =
     Canvas(Makie.get_top_parent(gridpos), GridLayout(gridpos))
 
+function gw_agent_loc(
+    renderer::GridworldRenderer, state::State,
+    height = size(state[renderer.grid_fluents[1]], 1)
+)
+    x = state[renderer.get_agent_x()]
+    y = height - state[renderer.get_agent_y()] + 1
+    return (x, y)
+end
+
+function gw_obj_loc(
+    renderer::GridworldRenderer, state::State, obj::Const,
+    height = size(state[renderer.grid_fluents[1]], 1)
+)
+    x = state[renderer.get_obj_x(obj)]
+    y = height - state[renderer.get_obj_y(obj)] + 1
+    return (x, y)
+end
+
 # State and trajectory rendering / animation
 include("state.jl")
 include("trajectory.jl")

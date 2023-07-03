@@ -55,8 +55,7 @@ function render_state!(
             for obj in PDDL.get_objects(domain, state[], type)
                 r = get(renderer.obj_renderers, type, default_obj_renderer)
                 graphic = @lift begin
-                    x = $state[renderer.get_obj_x(obj)]
-                    y = $height - $state[renderer.get_obj_y(obj)] + 1
+                    x, y = gw_obj_loc(renderer, $state, obj, $height)
                     translate(r(domain, $state, obj), x, y)
                 end
                 graphicplot!(ax, graphic)
@@ -66,8 +65,7 @@ function render_state!(
     # Render agent
     if renderer.has_agent && get(options, :show_agent, true)
         graphic = @lift begin
-            x = $state[renderer.get_agent_x()]
-            y = $height - $state[renderer.get_agent_y()] + 1
+            x, y = gw_agent_loc(renderer, $state, $height)
             translate(renderer.agent_renderer(domain, $state), x, y)
         end
         graphicplot!(ax, graphic)

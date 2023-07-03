@@ -12,9 +12,11 @@ function render_sol!(
     # Update options
     options = merge(renderer.trajectory_options, options)
     max_states = get(options, :max_states, 200)
+    arrowmarker = get(options, :track_arrowmarker, '▶')
+    stopmarker = get(options, :track_stopmarker, '⦿')
     # Set up observables for agent
     agent_locs = Observable(Point2f[])
-    agent_markers = Observable(Union{Symbol,Char}[])
+    agent_markers = Observable(Char[])
     agent_rotations = Observable(Float64[])
     agent_values = Observable(Float64[])
     # Update observables for reachable states
@@ -36,27 +38,21 @@ function render_sol!(
             push!(visited, state_id)
             # Get state value and best action
             val = SymbolicPlanners.get_value(sol, state)
-            act = SymbolicPlanners.best_action(sol, state)
+            best_act = SymbolicPlanners.best_action(sol, state)
             # Get agent location
             renderer.has_agent || continue
             height = size(state[renderer.grid_fluents[1]], 1)
-            x = state[renderer.get_agent_x()]
-            y = height - state[renderer.get_agent_y()] + 1
-            loc = Point2f(x, y)
+            loc = Point2f(gw_agent_loc(renderer, state, height))
             # Terminate if location has already been encountered
             loc in agent_locs[] && continue
             # Update agent observables
             push!(agent_locs[], loc)
-            next_state = transition(domain, state, act)
-            next_x = next_state[renderer.get_agent_x()]
-            next_y = height - next_state[renderer.get_agent_y()] + 1
-            if next_x == x && next_y == y
-                push!(agent_markers[], '⦿') 
-                push!(agent_rotations[], 0.0)
-            else
-                push!(agent_markers[], :rtriangle)
-                push!(agent_rotations[], atan(next_y - y, next_x - x))
-            end
+            next_state = transition(domain, state, best_act)
+            next_loc = Point2f(gw_agent_loc(renderer, next_state, height))
+            marker = loc == next_loc ? stopmarker : arrowmarker
+            push!(agent_markers[], marker)
+            rotation = atan(next_loc[2] - loc[2], next_loc[1] - loc[1])
+            push!(agent_rotations[], rotation)
             push!(agent_values[], val)
             # Add next states to queue
             for act in available(domain, state)
@@ -85,7 +81,7 @@ function render_sol!(
         end
         # Render best actions at each location
         if get(options, :show_actions, true)
-            markersize = get(options, :step_markersize, 0.3)
+            markersize = get(options, :track_markersize, 0.3)
             color = get(options, :agent_color, :black)
             scatter!(ax, agent_locs, marker=agent_markers,
                      rotations=agent_rotations, markersize=markersize,

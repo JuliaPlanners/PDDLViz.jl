@@ -1,6 +1,6 @@
 
 function (cb::AnimSolveCallback{GridworldRenderer})(
-    planner::ForwardPlanner,
+    planner::Union{ForwardPlanner, BreadthFirstPlanner},
     sol::PathSearchSolution, node_id::UInt, priority
 )
     renderer, canvas, domain = cb.renderer, cb.canvas, cb.domain
@@ -16,9 +16,9 @@ function (cb::AnimSolveCallback{GridworldRenderer})(
     Point2fVecObservable() = Observable(Point2f[])
     if renderer.has_agent
         agent_locs = get!(Point2fVecObservable,
-                        canvas.observables, :search_agent_locs)
+                          canvas.observables, :search_agent_locs)
         agent_dirs = get!(Point2fVecObservable,
-                        canvas.observables, :search_agent_dirs)
+                          canvas.observables, :search_agent_dirs)
     end
     # Extract object observables
     objects = get(options, :tracked_objects, Const[])
@@ -37,12 +37,10 @@ function (cb::AnimSolveCallback{GridworldRenderer})(
             empty!(agent_locs[])
             empty!(agent_dirs[])
         end
-        x = state[renderer.get_agent_x()]
-        y = height - state[renderer.get_agent_y()] + 1
-        prev_x = prev_state[renderer.get_agent_x()]
-        prev_y = height - prev_state[renderer.get_agent_y()] + 1
-        push!(agent_locs[], Point2f(prev_x, prev_y))
-        push!(agent_dirs[], Point2f(x-prev_x, y-prev_y))
+        loc = gw_agent_loc(renderer, state, height)
+        prev_loc = gw_agent_loc(renderer, prev_state, height)
+        push!(agent_locs[], prev_loc)
+        push!(agent_dirs[], loc .- prev_loc)
     end
     # Update object observables
     for (i, obj) in enumerate(objects)
@@ -50,12 +48,10 @@ function (cb::AnimSolveCallback{GridworldRenderer})(
             empty!(obj_locs[i][])
             empty!(obj_dirs[i][])
         end
-        x = state[renderer.get_obj_x(obj)]
-        y = height - state[renderer.get_obj_y(obj)] + 1
-        prev_x = prev_state[renderer.get_obj_x(obj)]
-        prev_y = height - prev_state[renderer.get_obj_y(obj)] + 1
-        push!(obj_locs[i][], Point2f(prev_x, prev_y))
-        push!(obj_dirs[i][], Point2f(x-prev_x, y-prev_y))
+        loc = gw_object_loc(renderer, state, obj, height)
+        prev_loc = gw_object_loc(renderer, prev_state, obj, height)
+        push!(obj_locs[i][], prev_loc)
+        push!(obj_dirs[i][], loc .- prev_loc)
     end
     # Render search tree if necessary
     if sol.expanded == 1

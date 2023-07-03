@@ -50,32 +50,23 @@ function render_trajectory!(
             height = size(state[renderer.grid_fluents[1]], 1)
             # Add markers for tracked objects
             for (i, obj) in enumerate(objects)
-                x = state[renderer.get_obj_x(obj)]
-                y = height - state[renderer.get_obj_y(obj)] + 1
-                push!(obj_locations[i][], Point2f(x, y))
-                next_x = next_state[renderer.get_obj_x(obj)]
-                next_y = height - next_state[renderer.get_obj_y(obj)] + 1
-                if next_x == x && next_y == y
-                    push!(obj_markers[i][], stopmarker)
-                    push!(obj_rotations[i][], 0.0)
-                else
-                    push!(obj_markers[i][], arrowmarker) 
-                    push!(obj_rotations[i][], atan(next_y - y, next_x - x))
-                end
+                loc = gw_obj_loc(renderer, state, obj, height)
+                next_loc = gw_obj_loc(renderer, next_state, obj, height)
+                push!(obj_locations[i][], loc)
+                marker = loc == next_loc ? stopmarker : arrowmarker
+                push!(obj_markers[i][], marker)
+                rotation = atan(next_loc[2] - loc[2], next_loc[1] - loc[1])
+                push!(obj_rotations[i][], rotation)
             end
             # Add markers for agent
-            renderer.has_agent || continue
-            x = state[renderer.get_agent_x()]
-            y = height - state[renderer.get_agent_y()] + 1
-            push!(locations[], Point2f(x, y))
-            next_x = next_state[renderer.get_agent_x()]
-            next_y = height - next_state[renderer.get_agent_y()] + 1
-            if next_x == x && next_y == y
-                push!(markers[], stopmarker) 
-                push!(rotations[], 0.0)
-            else
-                push!(markers[], arrowmarker)
-                push!(rotations[], atan(next_y - y, next_x - x))
+            if renderer.has_agent
+                loc = gw_agent_loc(renderer, state, height)
+                next_loc = gw_agent_loc(renderer, next_state, height)
+                push!(locations[], loc)
+                marker = loc == next_loc ? stopmarker : arrowmarker
+                push!(markers[], marker)
+                rotation = atan(next_loc[2] - loc[2], next_loc[1] - loc[1])
+                push!(rotations[], rotation)
             end
         end
         # Trigger updates

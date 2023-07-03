@@ -51,21 +51,17 @@ function render_sol!(
                 height = size(node.state[renderer.grid_fluents[1]], 1)
                 # Update agent observables
                 if renderer.has_agent
-                    x = state[renderer.get_agent_x()]
-                    y = height - state[renderer.get_agent_y()] + 1
-                    prev_x = prev_state[renderer.get_agent_x()]
-                    prev_y = height - prev_state[renderer.get_agent_y()] + 1
-                    push!(agent_locs[], Point2f(prev_x, prev_y))
-                    push!(agent_dirs[], Point2f(x-prev_x, y-prev_y))
+                    loc = gw_agent_loc(renderer, state, height)
+                    prev_loc = gw_agent_loc(renderer, prev_state, height)
+                    push!(agent_locs[], prev_loc)
+                    push!(agent_dirs[], loc .- prev_loc)
                 end
                 # Update object observables
                 for (i, obj) in enumerate(objects)
-                    x = state[renderer.get_obj_x(obj)]
-                    y = height - state[renderer.get_obj_y(obj)] + 1
-                    prev_x = prev_state[renderer.get_obj_x(obj)]
-                    prev_y = height - prev_state[renderer.get_obj_y(obj)] + 1
-                    push!(obj_locs[i][], Point2f(prev_x, prev_y))
-                    push!(obj_dirs[i][], Point2f(x-prev_x, y-prev_y))
+                    loc = gw_object_loc(renderer, state, obj, height)
+                    prev_loc = gw_object_loc(renderer, prev_state, obj, height)
+                    push!(obj_locs[i][], prev_loc)
+                    push!(obj_dirs[i][], loc .- prev_loc)
                 end
             end
             # Trigger updates
