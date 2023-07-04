@@ -131,7 +131,7 @@ function anim_transition!(
 )
     # Ignore timestep by default
     return anim_transition!(canvas, renderer, domain, state, action;
-                            callback=callback, overlay=overlay, kwargs...)
+                            callback, overlay, kwargs...)
 end
 
 function anim_transition!(
@@ -141,7 +141,7 @@ function anim_transition!(
 )
     # Ignore action by default
     return anim_transition!(canvas, renderer, domain, state;
-                            callback=callback, overlay=overlay, kwargs...)
+                            callback, overlay, kwargs...)
 end
 
 function anim_transition!(
@@ -158,16 +158,23 @@ end
 
 """
     anim_plan([path], renderer, domain, state, actions;
-              format="mp4", framerate=5, show=false, options...)
+              format="mp4", framerate=5, show=false,
+              record_init=true, options...)
               
-    anim_plan!([path], canvas, renderer, domain, state, actions;
-               format="mp4", framerate=5, show=is_displayed(canvas), options...)
+    anim_plan!([anim|path], canvas, renderer, domain, state, actions;
+               format="mp4", framerate=5, show=is_displayed(canvas),
+               record_init=true, options...)
 
 Uses `renderer` to animate a series of `actions` in a PDDL `domain` starting
-from `state` (updating the `canvas` if one is provided). If a `path` is
-specified, the animation is saved to that file, and the `path` is returned.
-Otherwise, a [`Animation`](@ref) object is returned, which can be saved
-or displayed. 
+from `state` (updating the `canvas` if one is provided). An [`Animation`](@ref)
+object is returned, which can be saved or displayed. 
+
+An existing `anim` can provided as the first argument, so that frames are 
+appended to that animation (format and frame rates are ignored in this case).
+Alternatively, if a `path` is specified, the animation is saved to that file,
+and the `path` is returned.
+
+Note that once an animation is displayed or saved, no frames can be added to it.
 """
 function anim_plan(
     renderer::Renderer, domain::Domain, state::State, actions;
@@ -175,12 +182,12 @@ function anim_plan(
 )
     canvas = new_canvas(renderer)
     return anim_plan!(canvas, renderer, domain, state, actions;
-                      show=show, kwargs...)
+                      show, kwargs...)
 end
 
 function anim_plan(path::AbstractString, args...; kwargs...)
     format = lstrip(splitext(path)[2], '.')
-    save(path, anim_plan(args...; format=format, kwargs...))
+    save(path, anim_plan(args...; format, kwargs...))
 end
 
 function anim_plan!(
@@ -192,9 +199,19 @@ function anim_plan!(
                             trajectory, actions; kwargs...)
 end
 
+function anim_plan!(
+    anim::Animation, canvas::Canvas, 
+    renderer::Renderer, domain::Domain, state::State, actions;
+    kwargs...
+)
+    trajectory = PDDL.simulate(domain, state, actions)
+    return anim_trajectory!(anim, canvas, renderer, domain,
+                            trajectory, actions; kwargs...)
+end
+
 function anim_plan!(path::AbstractString, args...; kwargs...)
     format = lstrip(splitext(path)[2], '.')
-    save(path, anim_plan!(args...; format=format, kwargs...))
+    save(path, anim_plan!(args...; format, kwargs...))
 end
 
 @doc (@doc anim_plan) anim_plan!
@@ -204,14 +221,21 @@ end
                     format="mp4", framerate=5, show=false,
                     record_init=true, options...)
                     
-    anim_trajectory!([path], canvas, renderer, domain, trajectory, [actions];
+    anim_trajectory!([anim|path], canvas, renderer,
+                     domain, trajectory, [actions];
                      format="mp4", framerate=5, show=is_displayed(canvas),
                      record_init=true, options...)
 
 Uses `renderer` to animate a `trajectory` in a PDDL `domain` (updating the
-`canvas` if one is provided). If a `path` is specified, the animation is
-saved to that file, and the `path` is returned. Otherwise, a [`Animation`](@ref)
-object is returned, which can be saved or displayed.
+`canvas` if one is provided).  An [`Animation`](@ref) object is returned,
+which can be saved or displayed. 
+    
+An existing `anim` can provided as the first argument, so that frames are 
+appended to that animation (format and frame rates are ignored in this case).
+Alternatively, if a `path` is specified, the animation is saved to that file,
+and the `path` is returned.
+
+Note that once an animation is displayed or saved, no frames can be added to it.
 """
 function anim_trajectory(
     renderer::Renderer, domain::Domain,
@@ -220,7 +244,7 @@ function anim_trajectory(
 )
     canvas = new_canvas(renderer)
     return anim_trajectory!(canvas, renderer, domain, trajectory;
-                            show=show, kwargs...)
+                            show, kwargs...)
 end
 
 function anim_trajectory(path::AbstractString, args...; kwargs...)
@@ -234,16 +258,29 @@ function anim_trajectory!(
     format="mp4", framerate=5, show::Bool=is_displayed(canvas),
     showrate=framerate, record_init=true, options...
 )
-    # Initialize animation
-    anim_initialize!(canvas, renderer, domain, trajectory[1]; options...)
     # Display canvas if `show` is true
     show && !is_displayed(canvas) && display(canvas)
     # Initialize animation
     record_args = filter(Dict(options)) do (k, v)
         k in (:compression, :profile, :pixel_format)
     end
-    anim = Animation(canvas.figure; visible=is_displayed(canvas), format=format,
-                     framerate=framerate, record_args...)
+    anim = Animation(canvas.figure; visible=is_displayed(canvas),
+                     format, framerate, record_args...)
+    # Record animation
+    anim_trajectory!(anim, canvas, renderer, domain, trajectory, actions;
+                     show, showrate, record_init, options...)
+    return anim
+end
+
+function anim_trajectory!(
+    anim::Animation, canvas::Canvas, renderer::Renderer, domain::Domain,
+    trajectory, actions=fill(PDDL.no_op, length(trajectory)-1);
+    show::Bool=is_displayed(canvas), showrate=5, record_init=true, options...
+)
+    # Display canvas if `show` is true
+    show && !is_displayed(canvas) && display(canvas)
+    # Initialize animation and record initial frame
+    anim_initialize!(canvas, renderer, domain, trajectory[1]; options...)
     record_init && recordframe!(anim)
     # Construct recording callback
     function record_callback(canvas::Canvas)
@@ -296,20 +333,24 @@ end
 
 """
     anim_solve([path], renderer, planner, domain, state, spec;
-               format="mp4", framerate=25, show=false,
+               format="mp4", framerate=30, show=false,
                record_init=true, options...)
 
-    anim_solve!([path], canvas, renderer, planner, domain, state, spec;
-                format="mp4", framerate=25, show=is_displayed(canvas),
+    anim_solve!([anim|path], canvas, renderer,
+                planner, domain, state, spec;
+                format="mp4", framerate=30, show=is_displayed(canvas),
                 record_init=true, options...)
 
 Uses `renderer` to animate the solving process of a SymbolicPlanners.jl
 `planner` in a PDDL `domain` (updating the `canvas` if one is provided).
 
 Returns a tuple `(anim, sol)` where `anim` is an [`Animation`](@ref) object
-containing the animation, and `sol` is the solution returned by `planner`.
-If a `path` is specified, the animation is saved to that file, and `(path, sol)`
-is returned.
+containing the animation, and `sol` is the solution returned by `planner`. If 
+`anim` is provided as the first argument, then additional frames are added to 
+the animation. Alternatively, if a `path` is provided, the animation is saved
+to that file, and `(path, sol)` is returned.
+
+Note that once an animation is displayed or saved, no frames can be added to it.
 """
 function anim_solve(
     renderer::Renderer, planner::Planner, domain::Domain, state::State, spec;
@@ -330,11 +371,9 @@ end
 function anim_solve!(
     canvas::Canvas, renderer::Renderer,
     planner::Planner, domain::Domain, state::State, spec;
-    format="mp4", framerate=30, show::Bool=true,
+    format="mp4", framerate=30, show::Bool=is_displayed(canvas),
     showrate=framerate, record_init=true, options...
 )
-    # Initialize animation
-    anim_initialize!(canvas, renderer, domain, state; options...)
     # Display canvas if `show` is true
     show && !is_displayed(canvas) && display(canvas)
     # Initialize animation
@@ -343,9 +382,22 @@ function anim_solve!(
     end
     anim = Animation(canvas.figure; visible=is_displayed(canvas), format=format,
                      framerate=framerate, record_args...)
-    if record_init
-        recordframe!(anim)
-    end
+    # Record animation
+    return anim_solve!(anim, canvas, renderer, planner, domain, state, spec;
+                       show=show, showrate=showrate, record_init=record_init,
+                       options...)
+end
+
+function anim_solve!(
+    anim::Animation, canvas::Canvas, renderer::Renderer,
+    planner::Planner, domain::Domain, state::State, spec;
+    show::Bool=is_displayed(canvas), showrate=30, record_init=true, options...
+)
+    # Display canvas if `show` is true
+    show && !is_displayed(canvas) && display(canvas)
+    # Initialize animation and record initial frame
+    anim_initialize!(canvas, renderer, domain, state; options...)
+    record_init && recordframe!(anim)
     # Construct recording callback
     function record_callback(canvas::Canvas)
         recordframe!(anim)
