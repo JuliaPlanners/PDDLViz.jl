@@ -1,7 +1,7 @@
 export anim_initialize!, anim_transition!
 export anim_plan!, anim_plan
 export anim_trajectory!, anim_trajectory
-export anim_solve!, anim_solve
+export anim_solve!, anim_solve, anim_refine!
 
 import Makie: FigureLike
 
@@ -384,8 +384,7 @@ function anim_solve!(
                      framerate=framerate, record_args...)
     # Record animation
     return anim_solve!(anim, canvas, renderer, planner, domain, state, spec;
-                       show=show, showrate=showrate, record_init=record_init,
-                       options...)
+                       show, showrate, record_init, options...)
 end
 
 function anim_solve!(
@@ -422,6 +421,92 @@ function anim_solve!(path::AbstractString, args...; kwargs...)
 end
 
 @doc (@doc anim_solve) anim_solve!
+
+"""
+    anim_refine!([path], renderer,
+                 sol, planner, domain, state, spec;
+                 format="mp4", framerate=30, show=false,
+                 record_init=true, options...)
+
+    anim_refine!([anim|path], canvas, renderer,
+                 sol, planner, domain, state, spec;
+                 format="mp4", framerate=30, show=is_displayed(canvas),
+                 record_init=true, options...)
+
+Uses `renderer` to animate the refinement of an existing solution by a
+SymbolicPlanners.jl `planner` in a PDDL `domain` (updating the `canvas`
+if one is provided).
+
+Returns a tuple `(anim, sol)` where `anim` is an [`Animation`](@ref) object
+containing the animation, and `sol` is the solution returned by `planner`. If 
+`anim` is provided as the first argument, then additional frames are added to 
+the animation. Alternatively, if a `path` is provided, the animation is saved
+to that file, and `(path, sol)` is returned.
+
+Note that once an animation is displayed or saved, no frames can be added to it.
+"""
+function anim_refine!(
+    renderer::Renderer,
+    sol::Solution, planner::Planner, domain::Domain, state::State, spec;
+    show::Bool=false, kwargs...
+)
+    canvas = new_canvas(renderer)
+    return anim_refine!(canvas, renderer, sol, planner, domain, state, spec;
+                        show=show, kwargs...)
+end
+
+function anim_refine!(path::AbstractString, args...; kwargs...)
+    format = lstrip(splitext(path)[2], '.')
+    anim, sol = anim_refine!(args...; format=format, kwargs...)
+    save(path, anim)
+    return (path, sol)
+end
+
+function anim_refine!(
+    canvas::Canvas, renderer::Renderer,
+    sol::Solution, planner::Planner, domain::Domain, state::State, spec;
+    format="mp4", framerate=30, show::Bool=is_displayed(canvas),
+    showrate=framerate, record_init=true, options...
+)
+    # Display canvas if `show` is true
+    show && !is_displayed(canvas) && display(canvas)
+    # Initialize animation
+    record_args = filter(Dict(options)) do (k, v)
+        k in (:compression, :profile, :pixel_format)
+    end
+    anim = Animation(canvas.figure; visible=is_displayed(canvas), format=format,
+                     framerate=framerate, record_args...)
+    # Record animation
+    return anim_refine!(anim, canvas, renderer,
+                        sol, planner, domain, state, spec;
+                        show, showrate, record_init, options...)
+end
+
+function anim_refine!(
+    anim::Animation, canvas::Canvas, renderer::Renderer,
+    sol::Solution, planner::Planner, domain::Domain, state::State, spec;
+    show::Bool=is_displayed(canvas), showrate=30, record_init=true, options...
+)
+    # Display canvas if `show` is true
+    show && !is_displayed(canvas) && display(canvas)
+    # Initialize animation and record initial frame
+    anim_initialize!(canvas, renderer, domain, state; options...)
+    record_init && recordframe!(anim)
+    # Construct recording callback
+    function record_callback(canvas::Canvas)
+        recordframe!(anim)
+        !show && return
+        notify(canvas.state)
+        sleep(1/showrate)
+    end
+    # Construct animation callback
+    anim_callback = AnimSolveCallback(renderer, domain, canvas, 0.0,
+                                      record_callback; options...)
+    # Refine existing solution and return solution with animation
+    planner = add_anim_callback(planner, anim_callback)
+    sol = SymbolicPlanners.refine(sol, planner, domain, state, spec)
+    return (anim, sol)
+end
 
 function add_anim_callback(planner::Planner, cb::AnimSolveCallback)
     planner = copy(planner)
