@@ -74,18 +74,13 @@ function render_sol!(
     if renderer.has_agent
         # Render state value heatmap
         if get(options, :show_value_heatmap, true)
-            xs = Observable(Float32[])
-            ys = Observable(Float32[])
-            on(agent_locs, update=true) do locs
-                xs.val = first.(locs)
-                ys.val = last.(locs)
-                notify(xs)
-                notify(ys)
-            end
             cmap = get(options, :value_colormap) do 
                 cgrad(Makie.ColorSchemes.viridis, alpha=0.5)
             end
-            plt = heatmap!(ax, xs, ys, agent_values; colormap=cmap)
+            marker = Polygon(Point2f.([(-.5, -.5), (-.5, .5),
+                                       (.5, .5), (.5, -.5)]))
+            plt = scatter!(ax, agent_locs, color=agent_values, colormap=cmap,
+                           marker=marker, markerspace=:data, markersize=1.0)
             Makie.translate!(plt, 0.0, 0.0, -0.5)
             canvas.plots[:policy_values] = plt
         end
