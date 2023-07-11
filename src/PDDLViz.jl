@@ -8,6 +8,7 @@ using Graphs, GraphMakie.NetworkLayout
 using FileIO, Base64
 using OrderedCollections
 using DocStringExtensions
+using Printf
 
 const MaybeObservable{T} = Union{Observable{T}, T}
 maybe_observe(x::Observable) = x

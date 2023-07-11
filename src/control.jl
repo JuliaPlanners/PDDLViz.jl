@@ -75,8 +75,9 @@ end
 
 
 function KeyboardController(
-    args::Union{Pair{Keyboard.Button, <:Term}, Keyboard.Button}...; kwargs...
-) where {T}
+    args::Union{Pair{Keyboard.Button, <:Term}, Keyboard.Button}...;
+    kwargs...
+)
     keymap = OrderedDict{Keyboard.Button, Term}()
     extrakeys = Keyboard.Button[]
     for arg in args

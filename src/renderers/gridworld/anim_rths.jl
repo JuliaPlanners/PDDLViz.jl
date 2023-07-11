@@ -46,8 +46,9 @@ function (cb::AnimSolveCallback{GridworldRenderer})(
                        Symbol("search_$(obj)_locs")) for obj in objects]
     search_obj_dirs = [get!(Point2fVecObservable, canvas.observables,
                        Symbol("search_$(obj)_dirs")) for obj in objects]
-    # Extract solution observable
-    sol_obs = get!(canvas.observables, :rths_solution, Observable(sol))
+    # Extract solution observables
+    sol_obs = get!(() -> Observable(sol), canvas.observables, :rths_solution)
+    state_obs = get!(() -> Observable(cur_state), canvas.observables, :rths_state)
     # Render current locations if necessary
     loc_marker = get(options, :rths_loc_marker, '○')
     loc_markersize = get(options, :rths_loc_markersize, 0.6)
@@ -83,8 +84,9 @@ function (cb::AnimSolveCallback{GridworldRenderer})(
     end
     # Render / update value heatmap
     if renderer.has_agent && !haskey(canvas.plots, :policy_values)
-        render_sol!(canvas, renderer, domain, cur_state, sol_obs; options...)
+        render_sol!(canvas, renderer, domain, state_obs, sol_obs; options...)
     else
+        state_obs.val = cur_state
         sol_obs[] = sol
     end
     # Run record callback if provided

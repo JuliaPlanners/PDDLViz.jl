@@ -28,8 +28,9 @@ function (cb::AnimSolveCallback{GridworldRenderer})(
                      Symbol("rtdp_$(obj)_locs")) for obj in objects]
     obj_dirs = [get!(Point2fVecObservable, canvas.observables,
                      Symbol("rtdp_$(obj)_dirs")) for obj in objects]
-    # Extract solution observable
-    sol_obs = get!(canvas.observables, :rtdp_solution, Observable(sol))
+    # Extract solution observables
+    sol_obs = get!(() -> Observable(sol), canvas.observables, :rtdp_solution)
+    state_obs = get!(() -> Observable(state), canvas.observables, :rtdp_state)
     # Reset agent observables
     if renderer.has_agent
         empty!(agent_locs[])
@@ -113,8 +114,9 @@ function (cb::AnimSolveCallback{GridworldRenderer})(
     end
     # Render / update value heatmap
     if renderer.has_agent && !haskey(canvas.plots, :policy_values)
-        render_sol!(canvas, renderer, domain, visited[1], sol_obs; options...)
+        render_sol!(canvas, renderer, domain, state_obs, sol_obs; options...)
     else
+        state_obs.val = visited[1]
         sol_obs[] = sol
     end
     !isnothing(cb.record_callback) && cb.record_callback(canvas)

@@ -55,6 +55,7 @@ function render_sol!(
             push!(agent_rotations[], rotation)
             push!(agent_values[], val)
             # Add next states to queue
+            push!(queue, next_state)
             for act in available(domain, state)
                 next_state = transition(domain, state, act)
                 push!(queue, next_state)
@@ -73,8 +74,14 @@ function render_sol!(
     if renderer.has_agent
         # Render state value heatmap
         if get(options, :show_value_heatmap, true)
-            xs = @lift first.($agent_locs)
-            ys = @lift last.($agent_locs)
+            xs = Observable(Float32[])
+            ys = Observable(Float32[])
+            on(agent_locs, update=true) do locs
+                xs.val = first.(locs)
+                ys.val = last.(locs)
+                notify(xs)
+                notify(ys)
+            end
             cmap = get(options, :value_colormap) do 
                 cgrad(Makie.ColorSchemes.viridis, alpha=0.5)
             end
@@ -94,7 +101,9 @@ function render_sol!(
         # Render state value labels at each location
         if get(options, :show_value_labels, true)
             label_locs = @lift $agent_locs .+ Point2f(0.0, 0.25)
-            labels = @lift string.($agent_values)
+            labels = @lift map($agent_values) do val
+                @sprintf("%.1f", val)
+            end
             plt = text!(ax, label_locs; text=labels, color=:black,
                         fontsize=0.2, markerspace=:data,
                         align=(:center, :center))
