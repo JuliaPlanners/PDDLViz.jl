@@ -113,8 +113,9 @@ function (cb::AnimSolveCallback{GridworldRenderer})(
         prev_state = state
     end
     # Render / update value heatmap
-    if renderer.has_agent && !haskey(canvas.plots, :policy_values)
-        render_sol!(canvas, renderer, domain, state_obs, sol_obs; options...)
+    if (renderer.has_agent && !haskey(canvas.plots, :agent_policy_values)) ||
+       (!isempty(objects) && !haskey(canvas.plots, Symbol("$(objects[1])_policy_values")))
+         render_sol!(canvas, renderer, domain, state_obs, sol_obs; options...)
     else
         state_obs.val = visited[1]
         sol_obs[] = sol

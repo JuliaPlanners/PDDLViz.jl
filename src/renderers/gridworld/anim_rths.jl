@@ -58,11 +58,12 @@ function (cb::AnimSolveCallback{GridworldRenderer})(
             scatter!(ax, agent_loc, color=agent_color, markerspace=:data,
                      marker=loc_marker, markersize=loc_markersize)
     end
-    if !isempty(objects) && !haskey(canvas.plots, :rths_obj_locs)
-        canvas.plots[:rths_obj_locs] = scatter!(
-            ax, obj_locs, color=obj_colors, markerspace=:data,
-            marker=loc_marker, markersize=loc_markersize
-        )
+    for (obj, loc, col) in zip(objects, obj_locs, obj_colors)
+        if !haskey(canvas.plots, Symbol("rths_$(obj)_loc"))
+            canvas.plots[Symbol("rths_$(obj)_loc")] =
+                scatter!(ax, loc, color=col, markerspace=:data,
+                         marker=loc_marker, markersize=loc_markersize)
+        end
     end
     # Update location observables
     if renderer.has_agent
@@ -73,9 +74,11 @@ function (cb::AnimSolveCallback{GridworldRenderer})(
     end
     # Reset search locations if iteration has completed
     if isnothing(act)
-        empty!(search_agent_locs[])
-        empty!(search_agent_dirs[])
-        notify(search_agent_locs)
+        if renderer.has_agent
+            empty!(search_agent_locs[])
+            empty!(search_agent_dirs[])
+            notify(search_agent_locs)
+        end
         for (ls, ds) in zip(search_obj_locs, search_obj_dirs)
             empty!(ls[])
             empty!(ds[])
@@ -83,7 +86,8 @@ function (cb::AnimSolveCallback{GridworldRenderer})(
         end
     end
     # Render / update value heatmap
-    if renderer.has_agent && !haskey(canvas.plots, :policy_values)
+    if (renderer.has_agent && !haskey(canvas.plots, :agent_policy_values)) ||
+       (!isempty(objects) && !haskey(canvas.plots, Symbol("$(objects[1])_policy_values")))
         render_sol!(canvas, renderer, domain, state_obs, sol_obs; options...)
     else
         state_obs.val = cur_state
