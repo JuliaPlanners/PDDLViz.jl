@@ -1,4 +1,5 @@
 export GemGraphic, LockedDoorGraphic, KeyGraphic
+export BoxGraphic, QuestionBoxGraphic
 export RobotGraphic, HumanGraphic
 export CityGraphic
 
@@ -48,6 +49,32 @@ function KeyGraphic(
     shadow.attributes[:color] = shadow_color
     graphic = MultiGraphic(shadow, key; kwargs...)
     return scale(translate(graphic, x, y), 0.5*size)
+end
+
+"Box prefab graphic, consisting of a box with a lid."
+function BoxGraphic(
+    x::Real=0.0, y::Real=0.0, size::Real=1.0;
+    color=:burlywood3, kwargs...
+)
+    size = size * 0.9
+    lid_color = lighten(color, 0.3)
+    lid = RectShape(x, y+0.3*size, 0.825*size, 0.2*size; color=lid_color)
+    box = RectShape(x, y, 0.75*size, 0.75*size; color=color)
+    return MultiGraphic(box, lid; kwargs...)
+end
+
+"Question box prefab graphic, consisting of a box with a lid and question mark."
+function QuestionBoxGraphic(
+    x::Real=0.0, y::Real=0.0, size::Real=1.0;
+    color=:burlywood3, text_color=:white, kwargs...
+)
+    size = size * 0.9
+    lid_color = lighten(color, 0.3)
+    lid = RectShape(x, y+0.3*size, 0.825*size, 0.2*size; color=lid_color)
+    box = RectShape(x, y, 0.75*size, 0.75*size; color=color)
+    question = TextGraphic("?", x, y-0.075*size; color=text_color,
+                           fontsize=0.5*size, font=:bold)
+    return MultiGraphic(box, lid, question; kwargs...)
 end
 
 "Robot prefab graphic"
