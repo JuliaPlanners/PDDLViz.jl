@@ -262,7 +262,7 @@ function anim_trajectory!(
     show && !is_displayed(canvas) && display(canvas)
     # Initialize animation
     record_args = filter(Dict(options)) do (k, v)
-        k in (:compression, :profile, :pixel_format)
+        k in (:compression, :profile, :pixel_format, :loop)
     end
     anim = Animation(canvas.figure; visible=is_displayed(canvas),
                      format, framerate, record_args...)
@@ -378,7 +378,7 @@ function anim_solve!(
     show && !is_displayed(canvas) && display(canvas)
     # Initialize animation
     record_args = filter(Dict(options)) do (k, v)
-        k in (:compression, :profile, :pixel_format)
+        k in (:compression, :profile, :pixel_format, :loop)
     end
     anim = Animation(canvas.figure; visible=is_displayed(canvas), format=format,
                      framerate=framerate, record_args...)
@@ -472,7 +472,7 @@ function anim_refine!(
     show && !is_displayed(canvas) && display(canvas)
     # Initialize animation
     record_args = filter(Dict(options)) do (k, v)
-        k in (:compression, :profile, :pixel_format)
+        k in (:compression, :profile, :pixel_format, :loop)
     end
     anim = Animation(canvas.figure; visible=is_displayed(canvas), format=format,
                      framerate=framerate, record_args...)
