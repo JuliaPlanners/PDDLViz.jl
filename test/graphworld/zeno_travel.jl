@@ -10,7 +10,7 @@ state = initstate(domain, problem)
 
 # Construct graphworld renderer
 cmap = PDDLViz.colorschemes[:vibrant]
-renderer = PDDLViz.GraphworldRenderer(
+renderer = GraphworldRenderer(
     has_mov_edges = true,
     location_types = [:city],
     movable_types = [:movable],

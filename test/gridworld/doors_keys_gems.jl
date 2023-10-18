@@ -14,7 +14,7 @@ state = initstate(domain, problem)
 
 # Construct gridworld renderer
 gem_colors = PDDLViz.colorschemes[:vibrant]
-renderer = PDDLViz.GridworldRenderer(
+renderer = GridworldRenderer(
     resolution = (600, 700),
     agent_renderer = (d, s) -> HumanGraphic(color=:black),
     obj_renderers = Dict(
