@@ -11,53 +11,55 @@ function render_state!(
     end
     # Extract or construct main axis
     ax = get(canvas.blocks, 1) do 
-        _ax = Axis(canvas.layout[1,1], aspect=1)
+        axis_options = copy(renderer.axis_options)
+        delete!(axis_options, :hidedecorations)
+        _ax = Axis(canvas.layout[1, 1]; axis_options...)
         push!(canvas.blocks, _ax)
         return _ax
     end
     # Extract objects from state
-    locations = reduce(vcat, [PDDL.get_objects(domain, state[], t)
-                              for t in renderer.location_types])
-    movables = reduce(vcat, [PDDL.get_objects(domain, state[], t)
-                             for t in renderer.movable_types])
+    locations = [sort!(PDDL.get_objects(domain, state[], t), by=string)
+                 for t in renderer.location_types]
+    locations = prepend!(reduce(vcat, locations, init=Const[]), renderer.locations)
+    movables = [sort!(PDDL.get_objects(domain, state[], t), by=string)
+                for t in renderer.movable_types]
+    movables = prepend!(reduce(vcat, movables, init=Const[]), renderer.movables)
     # Build static location graph
+    is_directed = renderer.is_loc_directed || renderer.is_mov_directed
     n_locs = length(locations)
-    loc_graph = renderer.is_directed ?
-        SimpleDiGraph(n_locs) : SimpleGraph(n_locs)
+    loc_graph = is_directed ? SimpleDiGraph(n_locs) : SimpleGraph(n_locs)
     for (i, a) in enumerate(locations), (j, b) in enumerate(locations)
-        if renderer.edge_fn(domain, state[], a, b)
-            add_edge!(loc_graph, i, j)
-        end
+        renderer.loc_edge_fn(domain, state[], a, b) || continue
+        add_edge!(loc_graph, i, j)
+        is_directed && !renderer.is_loc_directed || continue
+        add_edge!(loc_graph, j, i)
     end
     # Add movable objects to graph
     graph = @lift begin
         g = copy(loc_graph)
-        for obj in movables
+        # Add edges between locations and movable objects
+        for (i, mov) in enumerate(movables)
             add_vertex!(g)
-            for (i, loc) in enumerate(locations)
-                if renderer.at_loc_fn(domain, $state, obj, loc)
-                    add_edge!(g, i, nv(g))
-                    continue
+            for (j, loc) in enumerate(locations)
+                if renderer.mov_loc_edge_fn(domain, $state, mov, loc)
+                    add_edge!(g, n_locs + i, j)
+                    break
                 end
+            end
+        end
+        # Add edges between movable objects
+        if renderer.has_mov_edges
+            for (i, a) in enumerate(movables), (j, b) in enumerate(movables)
+                renderer.mov_edge_fn(domain, $state, a, b) || continue
+                add_edge!(g, n_locs + i, n_locs + j)
+                is_directed && !renderer.is_mov_directed || continue
+                add_edge!(g, n_locs + j, n_locs + i)
             end
         end
         g
     end
     # Construct layout for graph including movable objects
-    loc_pos = renderer.graph_layout(loc_graph)
-    layout = @lift begin
-        init_pos = copy(loc_pos)
-        for i in n_locs+1:nv($graph)
-            nbs = inneighbors($graph, i)
-            if isempty(nbs)
-                push!(init_pos, Point2f(0, 0))
-            else
-                push!(init_pos, loc_pos[nbs[1]])
-            end
-        end
-        Spring(; pin=loc_pos, initialpos=init_pos,
-               C=get(options, :movable_spring_constant, 0.3))
-    end
+    layout = renderer.graph_layout(n_locs)
     # Define node and edge labels
     loc_labels = get(options, :show_location_labels, true) ?
         string.(locations) : fill("", length(locations))
@@ -73,11 +75,18 @@ function render_state!(
             end
             labels = Vector{String}(undef, n_edges)
             for (i, e) in enumerate(edges($graph))
-                if e.src > n_locs || e.dst > n_locs
-                    labels[i] = ""
-                else
+                if e.src <= n_locs && e.dst <= n_locs
                     a, b = locations[e.src], locations[e.dst]
-                    labels[i] = renderer.edge_label_fn(domain, $state, a, b)
+                    labels[i] = renderer.loc_edge_label_fn(domain, $state, a, b)
+                elseif e.src > n_locs && e.dst > n_locs
+                    a = movables[e.src - n_locs]
+                    b = movables[e.dst - n_locs]
+                    labels[i] = renderer.mov_edge_label_fn(domain, $state, a, b)
+                elseif e.src <= n_locs && e.dst > n_locs
+                    a = movables[e.dst - n_locs]
+                    b = locations[e.src]
+                    labels[i] =
+                        renderer.mov_loc_edge_label_fn(domain, $state, a, b)
                 end
             end
             labels
@@ -100,19 +109,27 @@ function render_state!(
                     nlabels=node_labels, elabels=edge_labels,
                     edge_color=edge_colors, renderer.graph_options...)
     canvas.plots[:graph] = gp
+    canvas.observables[:node_pos] = gp[:node_pos]
     # Update node label offsets
-    offset_mult = get(options, :label_offset_mult, 0.2)
+    label_offset = get(options, :label_offset, 0.15)
     map!(gp.nlabels_offset, gp.node_pos) do node_pos
         mean_pos = sum(node_pos[1:n_locs]) / n_locs
-        offsets = offset_mult .* (node_pos .- mean_pos)
+        dir = node_pos .- mean_pos
+        mag = [GeometryBasics.norm(d) for d in dir]
+        dir = dir ./ mag
+        offsets = label_offset .* dir
         return offsets
     end
     # Render location graphics
     if get(options, :show_location_graphics, true)
         for (i, loc) in enumerate(locations)
-            type = PDDL.get_objtype(state[], loc)
-            r = get(renderer.loc_renderers, type, nothing)
-            r === nothing && continue
+            r = get(renderer.loc_renderers, loc, nothing)
+            if r === nothing
+                loc in PDDL.get_objects(state[]) || continue
+                type = PDDL.get_objtype(state[], loc)
+                r = get(renderer.loc_type_renderers, type, nothing)
+                r === nothing && continue
+            end
             graphic = @lift begin
                 pos = $(gp.node_pos)[i]
                 translate(r(domain, $state, loc), pos[1], pos[2])
@@ -124,9 +141,13 @@ function render_state!(
     # Render movable object graphics
     if get(options, :show_movable_graphics, true)
         for (i, obj) in enumerate(movables)
-            type = PDDL.get_objtype(state[], obj)
-            r = get(renderer.obj_renderers, type, nothing)
-            r === nothing && continue
+            r = get(renderer.mov_renderers, obj, nothing)
+            if r === nothing
+                obj in PDDL.get_objects(state[]) || continue
+                type = PDDL.get_objtype(state[], obj)
+                r = get(renderer.mov_type_renderers, type, nothing)
+                r === nothing && continue
+            end
             graphic = @lift begin
                 pos = $(gp.node_pos)[n_locs + i]
                 translate(r(domain, $state, obj), pos[1], pos[2])
@@ -135,10 +156,10 @@ function render_state!(
             canvas.plots[Symbol("$(obj)_graphic")] = plt
         end
     end
-    # Final axis modifications
-    hidedecorations!(ax)
-    autolimits!(ax)
-    ax.aspect = 1
+    # Hide decorations if flag is specified
+    if get(renderer.axis_options, :hidedecorations, true)
+        hidedecorations!(ax)
+    end
     return canvas
 end
 
@@ -153,9 +174,7 @@ end
 - `movable_node_color = :gray`: Color of movable object nodes.
 - `movable_edge_color = (:mediumpurple, 0.75)`: Color of edges between
   locations and movable objects.
-- `movable_spring_constant = 0.3`: Controls how much movable objects are
-  repelled from other nodes.
-- `label_offset_mult = 0.2`: Multiplier for the offset of labels from their
+- `label_offset = 0.15`: How much labels are offset from the center of their
   corresponding objects. Larger values move the labels further away.
 """
 default_state_options(R::Type{GraphworldRenderer}) = Dict{Symbol,Any}(
@@ -168,6 +187,5 @@ default_state_options(R::Type{GraphworldRenderer}) = Dict{Symbol,Any}(
     :location_edge_color => :black,
     :movable_node_color => :gray,
     :movable_edge_color => (:mediumpurple, 0.75),
-    :movable_spring_constant => 0.3,
-    :label_offset_mult => 0.2,
+    :label_offset => 0.15
 )
