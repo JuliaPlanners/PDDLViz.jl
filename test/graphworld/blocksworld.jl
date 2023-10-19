@@ -24,5 +24,6 @@ plan = @pddl(
     "(pick-up b)", "(stack b c)",
     "(unstack a f)", "(stack a b)"
 )
-anim = anim_plan!(canvas, renderer, domain, state, plan, framerate=2);
+anim = anim_plan!(canvas, renderer, domain, state, plan,
+                  move_speed=0.4, framerate=24, showrate=Inf)
 save("blocksworld.mp4", anim)

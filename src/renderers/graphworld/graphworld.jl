@@ -78,6 +78,28 @@ $(TYPEDFIELDS)
     anim_options::Dict{Symbol, Any} = Dict{Symbol, Any}()
 end
 
+function new_canvas(renderer::GraphworldRenderer)
+    figure = Figure(resolution=renderer.resolution)
+    return Canvas(figure)
+end
+
+include("state.jl")
+include("animate.jl")
+
+# Add documentation for auxiliary options
+Base.with_logger(Base.NullLogger()) do
+    @doc """
+    $(@doc GraphworldRenderer)
+
+    # State options
+
+    These options can be passed as keyword arguments to [`render_state`](@ref):
+
+    $(Base.doc(default_state_options, Tuple{Type{GraphworldRenderer}}))
+    """
+    GraphworldRenderer
+end
+
 """
     BlocksworldRenderer(; options...)
 
@@ -153,6 +175,12 @@ function BlocksworldRenderer(;
     mov_type_renderers = Dict{Symbol, Function}(
         block_type => block_renderer
     ),
+    graph_options = Dict{Symbol, Any}(
+        :arrow_show => false,
+        :node_size => 0.0,
+        :edge_width => 0.0,
+        :node_attr => (markerspace=:data,),
+    ),
     axis_options = Dict{Symbol, Any}(
         :aspect => DataAspect(),
         :xautolimitmargin => (0.0, 0.0),
@@ -166,11 +194,12 @@ function BlocksworldRenderer(;
         :show_location_graphics => true,
         :show_movable_graphics => true
     ),
-    graph_options = Dict{Symbol, Any}(
-        :arrow_show => false,
-        :node_size => 0.0,
-        :edge_width => 0.0,
-        :node_attr => (markerspace=:data,),
+    anim_options = Dict{Symbol, Any}(
+        :transition => ManhattanTransition(
+            order = [:up, :horizontal, :down],
+            stop_early = [true, false, false]
+        ),
+        :move_speed => 0.5
     ),
     kwargs...
 )
@@ -187,31 +216,10 @@ function BlocksworldRenderer(;
         mov_edge_fn,
         loc_renderers,
         mov_type_renderers,
+        graph_options,
         axis_options,
         state_options,
-        graph_options,
+        anim_options,
         kwargs...
     )
-end
-
-function new_canvas(renderer::GraphworldRenderer)
-    figure = Figure(resolution=renderer.resolution)
-    return Canvas(figure)
-end
-
-include("state.jl")
-include("animate.jl")
-
-# Add documentation for auxiliary options
-Base.with_logger(Base.NullLogger()) do
-    @doc """
-    $(@doc GraphworldRenderer)
-
-    # State options
-
-    These options can be passed as keyword arguments to [`render_state`](@ref):
-
-    $(Base.doc(default_state_options, Tuple{Type{GraphworldRenderer}}))
-    """
-    GraphworldRenderer
 end

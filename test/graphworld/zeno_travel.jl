@@ -85,5 +85,5 @@ storyboard = render_storyboard(
 canvas = renderer(domain, state)
 anim = anim_plan!(canvas, renderer, domain, state, plan,
                   transition=PDDLViz.LinearTransition(), 
-                  framerate=30, frames_per_step=30)
+                  frames_per_step=12, framerate=12, showrate=Inf)
 save("zeno_travel_smooth.mp4", anim)

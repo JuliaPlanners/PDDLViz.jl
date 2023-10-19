@@ -132,8 +132,12 @@ function render_state!(
                 r = get(renderer.loc_type_renderers, type, nothing)
                 r === nothing && continue
             end
+            graphic_pos = Observable(gp.node_pos[][i], ignore_equal_values=true)
+            on(gp.node_pos, update=true) do positions
+                graphic_pos[] = positions[i]
+            end
             graphic = @lift begin
-                pos = $(gp.node_pos)[i]
+                pos = $graphic_pos
                 translate(r(domain, $state, loc), pos[1], pos[2])
             end
             plt = graphicplot!(ax, graphic)
@@ -150,8 +154,13 @@ function render_state!(
                 r = get(renderer.mov_type_renderers, type, nothing)
                 r === nothing && continue
             end
+            graphic_pos = Observable(gp.node_pos[][n_locs + i],
+                                     ignore_equal_values=true)
+            on(gp.node_pos, update=true) do positions
+                graphic_pos[] = positions[n_locs + i]
+            end
             graphic = @lift begin
-                pos = $(gp.node_pos)[n_locs + i]
+                pos = $graphic_pos
                 translate(r(domain, $state, obj), pos[1], pos[2])
             end
             plt = graphicplot!(ax, graphic)
