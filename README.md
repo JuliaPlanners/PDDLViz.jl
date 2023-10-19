@@ -2,6 +2,10 @@
 
 A library for visualizing, animating, and interacting with PDDL domains, built on top of [Makie.jl](https://github.com/MakieOrg/Makie.jl).
 
+| Doors, Keys & Gems | Blocksworld | Zeno Travel |
+| --- | --- | --- |
+| ![Example gridworld animation](assets/gridworld.gif) | ![Example blocksworld animation](assets/blocksworld.gif) | ![Example zeno-travel animation](assets/zeno_travel.gif) |
+
 ## Installation
 
 Press `]` at the Julia REPL to enter the package manager, then install this package along with `PDDL` and a `Makie` backend of your choice (e.g. `GLMakie`):
@@ -15,7 +19,7 @@ To install the development version, replace `PDDLViz` above with `https://github
 
 ## Usage
 
-`PDDLViz.jl` provides a number of built-in renderer types for certain classes of domains, such as [`GridworldRenderer`](test/gridworld/test.jl) or [`GraphworldRenderer`](test/graphworld/test.jl). Each renderer can be customized for a specific domain by passing in options to its constructor:
+`PDDLViz.jl` provides a number of built-in renderer types for certain classes of domains, such as [`GridworldRenderer`](test/gridworld/doors_keys_gems.jl), [`GraphworldRenderer`](test/graphworld/zeno_travel.jl) or [`BlocksworldRenderer`](test/graphworld/blocksworld.jl). Each renderer can be customized for a specific domain by passing in options to its constructor:
 
 ```julia
 using PDDLViz, GLMakie
@@ -73,4 +77,4 @@ Renderers can also be used to create animations as well:
 
 ![Example gridworld trajectory animated by PDDLViz.jl](assets/gridworld.gif)
 
-See  [`test/gridworld/test.jl`](test/gridworld/test.jl) for examples of how to render plans, trajectories and planner solutions, how to animate trajectories, and how to enable interactive controls.
+See the [`test`](test/) folder for examples of how to render plans, trajectories and planner solutions, how to animate trajectories, and how to enable interactive controls.
