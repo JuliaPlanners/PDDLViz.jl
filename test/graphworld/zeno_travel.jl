@@ -80,3 +80,10 @@ storyboard = render_storyboard(
                "(v) Person 1 debarks plane", "(vi) Plane flies back to city 2"],
     xlabelsize=18, subtitlesize=22
 )
+
+# Render animation with linearly interpolated transitions
+canvas = renderer(domain, state)
+anim = anim_plan!(canvas, renderer, domain, state, plan,
+                  transition=PDDLViz.LinearTransition(), 
+                  framerate=30, frames_per_step=30)
+save("zeno_travel_smooth.mp4", anim)

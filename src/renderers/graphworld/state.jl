@@ -108,7 +108,9 @@ function render_state!(
     gp = graphplot!(ax, graph; layout=layout, node_color=node_colors,
                     nlabels=node_labels, elabels=edge_labels,
                     edge_color=edge_colors, renderer.graph_options...)
-    canvas.plots[:graph] = gp
+    canvas.plots[:graphplot] = gp
+    canvas.observables[:graph] = graph
+    canvas.observables[:layout] = gp[:layout]
     canvas.observables[:node_pos] = gp[:node_pos]
     # Update node label offsets
     label_offset = get(options, :label_offset, 0.15)

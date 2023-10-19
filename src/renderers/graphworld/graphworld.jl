@@ -167,7 +167,7 @@ function BlocksworldRenderer(;
         :show_movable_graphics => true
     ),
     graph_options = Dict{Symbol, Any}(
-        :show_arrow => false,
+        :arrow_show => false,
         :node_size => 0.0,
         :edge_width => 0.0,
         :node_attr => (markerspace=:data,),
@@ -200,6 +200,7 @@ function new_canvas(renderer::GraphworldRenderer)
 end
 
 include("state.jl")
+include("animate.jl")
 
 # Add documentation for auxiliary options
 Base.with_logger(Base.NullLogger()) do

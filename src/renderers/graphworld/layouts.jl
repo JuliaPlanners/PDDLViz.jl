@@ -22,8 +22,8 @@ function StressLocSpringMov(;
     dim = 2,
     Ptype = Float64,
     n_locs = 0,
-    stress_kwargs = Dict{Symbol, Any}(),
-    spring_kwargs = Dict{Symbol, Any}(:C => 0.3)
+    stress_kwargs = Dict{Symbol, Any}(:seed => 1),
+    spring_kwargs = Dict{Symbol, Any}(:C => 0.3, :seed => 1)
 )
     return StressLocSpringMov{dim, Ptype}(n_locs, stress_kwargs, spring_kwargs)
 end
