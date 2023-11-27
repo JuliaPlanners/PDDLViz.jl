@@ -45,20 +45,20 @@ function render_sol!(
             # Iterate over nodes in search tree (in order if available)
             for id in node_ids
                 node = sol.search_tree[id]
-                isnothing(node.parent_id) && continue
-                state = node.state
-                prev_state = sol.search_tree[node.parent_id].state
+                cur_state = node.state
+                prev_state = isnothing(node.parent_id) ? 
+                    cur_state : sol.search_tree[node.parent_id].state
                 height = size(node.state[renderer.grid_fluents[1]], 1)
                 # Update agent observables
                 if renderer.has_agent
-                    loc = gw_agent_loc(renderer, state, height)
+                    loc = gw_agent_loc(renderer, cur_state, height)
                     prev_loc = gw_agent_loc(renderer, prev_state, height)
                     push!(agent_locs[], loc)
                     push!(agent_dirs[], loc .- prev_loc)
                 end
                 # Update object observables
                 for (i, obj) in enumerate(objects)
-                    loc = gw_obj_loc(renderer, state, obj, height)
+                    loc = gw_obj_loc(renderer, cur_state, obj, height)
                     prev_loc = gw_obj_loc(renderer, prev_state, obj, height)
                     push!(obj_locs[i][], loc)
                     push!(obj_dirs[i][], loc .- prev_loc)
@@ -78,8 +78,7 @@ function render_sol!(
         edge_arrow = get(options, :search_arrow, '▷')  
         cmap = get(options, :search_colormap, cgrad([:blue, :red]))
         if renderer.has_agent
-            colors = @lift isempty($sol.search_order) ?
-                get(options, :search_color, :red) : 1:length($agent_locs)
+            colors = @lift 1:length($agent_locs)
             canvas.plots[:agent_search_nodes] = arrows!(
                 ax, agent_locs, agent_dirs, colormap=cmap, color=colors,
                 arrowsize=node_size, arrowhead=node_marker,
@@ -97,8 +96,7 @@ function render_sol!(
             )
         end
         for (obj, ls, ds) in zip(objects, obj_locs, obj_dirs)
-            colors = @lift isempty($sol.search_order) ?
-                get(options, :search_color, :red) : 1:length($ls)
+            colors = @lift 1:length($ls)
             canvas.plots[Symbol("$(obj)_search_nodes")] = arrows!(
                 ax, ls, ds, colormap=cmap, color=colors, markerspace=:data,
                 arrowsize=node_size, arrowhead=node_marker, align=:head
