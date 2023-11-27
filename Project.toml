@@ -1,7 +1,7 @@
 name = "PDDLViz"
 uuid = "8f72e95f-8ea1-4af3-8b89-086f52abff52"
 authors = ["Xuan <tanqazx@gmail.com> and contributors"]
-version = "0.1.7"
+version = "0.1.8"
 
 [deps]
 Base64 = "2a0f44e3-6c83-55bd-87e4-b1978d98bd5f"
@@ -19,6 +19,7 @@ Printf = "de0858da-6303-5e67-8744-51eddeeeb8d7"
 SymbolicPlanners = "b6fe5377-9711-4fad-95b0-be4eed71ecbb"
 
 [compat]
+Base64 = "<0.0.1, 1"
 ColorTypes = "0.8, 0.9, 0.10, 0.11"
 DocStringExtensions = "0.8, 0.9"
 FileIO = "1.6"
