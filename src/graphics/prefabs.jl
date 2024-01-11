@@ -68,35 +68,48 @@ end
 
 """
     BoxGraphic(x=0.0, y=0.0, size=1.0;
-               color=:burlywood3, kwargs...)
+               color=:burlywood3, is_open=false, kwargs...)
 
 Cardboard box graphic, consisting of a box with a lid.
 """
 function BoxGraphic(
     x::Real=0.0, y::Real=0.0, size::Real=1.0;
-    color=:burlywood3, kwargs...
+    color=:burlywood3, is_open::Bool=false, kwargs...
 )
     size = size * 0.9
     lid_color = lighten(color, 0.3)
-    lid = RectShape(x, y+0.3*size, 0.825*size, 0.2*size; color=lid_color)
-    box = RectShape(x, y, 0.75*size, 0.75*size; color=color)
+    if is_open
+        lid = RectShape(x-0.37*size, y+0.02*size, 0.825*size, 0.2*size;
+                        color=lid_color)
+        lid = rotate(lid, 11*π/24)
+    else
+        lid = RectShape(x, y+0.3*size, 0.825*size, 0.2*size; color=lid_color)
+    end
+    box = RectShape(x, y-0.05*size, 0.75*size, 0.65*size; color=color)
     return MultiGraphic(box, lid; kwargs...)
 end
 
 """
     QuestionBoxGraphic(x=0.0, y=0.0, size=1.0;
-                       color=:burlywood3, text_color=:white, kwargs...)
+                       color=:burlywood3, text_color=:white,
+                       is_open=false, kwargs...)
 
 Question box graphic, consisting of a box with a lid and question mark.
 """
 function QuestionBoxGraphic(
     x::Real=0.0, y::Real=0.0, size::Real=1.0;
-    color=:burlywood3, text_color=:white, kwargs...
+    color=:burlywood3, text_color=:white, is_open::Bool=false, kwargs...
 )
     size = size * 0.9
     lid_color = lighten(color, 0.3)
-    lid = RectShape(x, y+0.3*size, 0.825*size, 0.2*size; color=lid_color)
-    box = RectShape(x, y, 0.75*size, 0.75*size; color=color)
+    if is_open
+        lid = RectShape(x-0.37*size, y+0.02*size, 0.825*size, 0.2*size;
+                        color=lid_color)
+        lid = rotate(lid, 11*π/24)
+    else
+        lid = RectShape(x, y+0.3*size, 0.825*size, 0.2*size; color=lid_color)
+    end
+    box = RectShape(x, y-0.05*size, 0.75*size, 0.65*size; color=color)
     question = TextGraphic("?", x, y-0.075*size; color=text_color,
                            fontsize=0.5*size, font=:bold)
     return MultiGraphic(box, lid, question; kwargs...)
