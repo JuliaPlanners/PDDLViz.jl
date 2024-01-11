@@ -2,7 +2,6 @@
 
 @recipe(GraphicPlot, graphic) do scene
     Makie.Attributes(
-        shading=false,
         cycle=[:color],
         colormap=colorschemes[:vibrant]
     )
@@ -18,6 +17,10 @@ function Makie.plot!(plt::GraphicPlot{<:Tuple{BasicGraphic}})
         for k in keys(graphic[].attributes)
     )
     attributes = merge!(attributes, local_attributes)
+    if !haskey(attributes, :shading)
+        attributes[:shading] = isdefined(Makie.MakieCore, :NoShading) ?
+            Makie.MakieCore.NoShading : false
+    end
     # Plot fill
     mesh!(plt, shape; attributes...)
     # Plot stroke if width is greater than 0
@@ -26,6 +29,9 @@ function Makie.plot!(plt::GraphicPlot{<:Tuple{BasicGraphic}})
     attributes[:visible] = @lift $visible && $strokewidth > 0
     attributes[:color] = get(attributes, :strokecolor, :black)
     attributes[:linewidth] = strokewidth
+    if haskey(attributes, :shading)
+        delete!(attributes, :shading)
+    end
     lines!(plt, shape; attributes...)
 end
 
