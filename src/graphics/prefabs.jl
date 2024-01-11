@@ -3,21 +3,31 @@ export BoxGraphic, QuestionBoxGraphic
 export RobotGraphic, HumanGraphic
 export CityGraphic
 
-"Gem prefab graphic, consisting of a N-gon and a smaller N-gon inside it."
+"""
+    GemGraphic(x=0.0, y=0.0, size=1.0, sides=6, aspect=0.75;
+               color=:royalblue, strokewidth=1.0, kwargs...)
+
+Gem graphic, consisting of a N-gon and a smaller N-gon inside it.
+"""
 function GemGraphic(
-    x::Real=0.0, y::Real=0.0, size::Real=1.0, sides::Int=6;
+    x::Real=0.0, y::Real=0.0, size::Real=1.0, sides::Int=6, aspect::Real=0.75;
     color=:royalblue, strokewidth=1.0, kwargs...
 )
     color = color isa Observable ? to_color_obs(color) : to_color(color)
     outer = NgonShape(x, y, size, sides; color=color, strokewidth=strokewidth)
-    outer = scale(outer, 0.225, 0.3)
+    outer = scale(outer, aspect*0.3, 0.3)
     color = lighten(color, 0.5)
     inner = NgonShape(x, y, size, sides; color=color)
-    inner = scale(inner, 0.135, 0.18)
+    inner = scale(inner, aspect*0.18, 0.18)
     return MultiGraphic(outer, inner; kwargs...)
 end
 
-"Locked door prefab graphic, consisting of square with a keyhole in it."
+"""
+    LockedDoorGraphic(x=0.0, y=0.0, size=1.0;
+                      color=:gray, strokewidth=1.0, kwargs...)
+
+Locked door graphic, consisting of square with a keyhole in it.
+"""
 function LockedDoorGraphic(
     x::Real=0.0, y::Real=0.0, size::Real=1.0;
     color=:gray, strokewidth=1.0, kwargs...
@@ -32,7 +42,12 @@ function LockedDoorGraphic(
     return MultiGraphic(bg, fg, hole1, hole2; kwargs...)
 end
 
-"Key prefab graphic, consisting of a key with a handle and two teeth."
+"""
+    KeyGraphic(x=0.0, y=0.0, size=1.0;
+               color=:goldenrod1, shadow_color=:black, kwargs...)
+
+Key graphic, consisting of a key with a handle and two teeth.
+"""
 function KeyGraphic(
     x::Real=0.0, y::Real=0.0, size::Real=1.0;
     color=:goldenrod1, shadow_color=:black, kwargs...
@@ -51,7 +66,12 @@ function KeyGraphic(
     return scale(translate(graphic, x, y), 0.5*size)
 end
 
-"Box prefab graphic, consisting of a box with a lid."
+"""
+    BoxGraphic(x=0.0, y=0.0, size=1.0;
+               color=:burlywood3, kwargs...)
+
+Cardboard box graphic, consisting of a box with a lid.
+"""
 function BoxGraphic(
     x::Real=0.0, y::Real=0.0, size::Real=1.0;
     color=:burlywood3, kwargs...
@@ -63,7 +83,12 @@ function BoxGraphic(
     return MultiGraphic(box, lid; kwargs...)
 end
 
-"Question box prefab graphic, consisting of a box with a lid and question mark."
+"""
+    QuestionBoxGraphic(x=0.0, y=0.0, size=1.0;
+                       color=:burlywood3, text_color=:white, kwargs...)
+
+Question box graphic, consisting of a box with a lid and question mark.
+"""
 function QuestionBoxGraphic(
     x::Real=0.0, y::Real=0.0, size::Real=1.0;
     color=:burlywood3, text_color=:white, kwargs...
@@ -77,7 +102,13 @@ function QuestionBoxGraphic(
     return MultiGraphic(box, lid, question; kwargs...)
 end
 
-"Robot prefab graphic"
+"""
+    RobotGraphic(x=0.0, y=0.0, size=1.0;
+                 color=:slategray, kwargs...)
+
+Robot prefab character graphic, consisting of a semi-circular head with an 
+antenna, two arms, a body and a wheel.
+"""
 function RobotGraphic(
     x::Real=0.0, y::Real=0.0, size::Real=1.0;
     color=:slategray, kwargs...
@@ -102,7 +133,13 @@ function RobotGraphic(
                         arm1, arm2; color=color, kwargs...)
 end
 
-"Human prefab graphic, made of a oval head and triangle body."
+"""
+    HumanGraphic(x=0.0, y=0.0, size=1.0;
+                 color=:black, kwargs...)
+
+Human character graphic, consisting of a circular head, and a trapezoidal torso,
+two-segment arms, and legs.
+"""
 function HumanGraphic(
     x::Real=0.0, y::Real=0.0, size::Real=1.0;
     color=:black, kwargs...
@@ -128,7 +165,12 @@ function HumanGraphic(
     return scale(human, 1.2, 1.2)
 end
 
-"City prefab graphic, made of three rectangles."
+"""
+    CityGraphic(x=0.0, y=0.0, size=1.0;
+                color=:grey, kwargs...)
+
+City graphic, made of three rectangles with slightly different shading.
+"""
 function CityGraphic(
     x::Real=0.0, y::Real=0.0, size::Real=1.0;
     color=:grey, kwargs...
