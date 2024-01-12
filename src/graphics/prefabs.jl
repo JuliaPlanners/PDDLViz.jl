@@ -84,6 +84,7 @@ function BoxGraphic(
         lid = rotate(lid, 11*π/24)
     else
         lid = RectShape(x, y+0.3*size, 0.825*size, 0.2*size; color=lid_color)
+        lid = rotate(lid, 0.0)
     end
     box = RectShape(x, y-0.05*size, 0.75*size, 0.65*size; color=color)
     return MultiGraphic(box, lid; kwargs...)
@@ -108,6 +109,7 @@ function QuestionBoxGraphic(
         lid = rotate(lid, 11*π/24)
     else
         lid = RectShape(x, y+0.3*size, 0.825*size, 0.2*size; color=lid_color)
+        lid = rotate(lid, 0.0)
     end
     box = RectShape(x, y-0.05*size, 0.75*size, 0.65*size; color=color)
     question = TextGraphic("?", x, y-0.075*size; color=text_color,
