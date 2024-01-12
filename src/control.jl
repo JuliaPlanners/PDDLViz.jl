@@ -169,12 +169,21 @@ function render_controls!(
     append!(buttons, controller.extrakeys)
     append!(labels, fill(' '^40, length(controller.extrakeys)))
     markers = _keyboard_button_marker.(buttons)
+
+
     entries = [LegendEntry(m, Attributes(label=l, labelcolor=:black))
                for (l, m) in zip(labels, markers)]
     entrygroups = Observable(Makie.EntryGroup[("Controls", entries)])
-    controls = Legend(figure[1, end+1], entrygroups;
-                      framevisible=false, labelsize=14,
-                      halign=:left, titlehalign=:left)
+    controls = nothing
+    try
+        controls = Legend(figure[1, end+1], entrygroups;
+                        framevisible=false, labelsize=14,
+                        halign=:left, titlehalign=:left)
+    catch
+        controls = Legend(figure[1, end+1]; entrygroups=entrygroups,
+                        framevisible=false, labelsize=14,
+                        halign=:left, titlehalign=:left)
+    end
     resize_to_layout!(figure)
     # Extract observables from entries
     label_obs = Observable[]
