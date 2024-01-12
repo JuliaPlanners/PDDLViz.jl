@@ -79,7 +79,8 @@ $(TYPEDFIELDS)
 end
 
 function new_canvas(renderer::GraphworldRenderer)
-    figure = Figure(resolution=renderer.resolution)
+    figure = Figure()
+    resize!(figure.scene, renderer.resolution)
     return Canvas(figure)
 end
 

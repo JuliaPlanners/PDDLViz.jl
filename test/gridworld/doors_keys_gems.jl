@@ -91,7 +91,8 @@ storyboard = render_storyboard(
 )
 
 # Construct multiple canvases on the same figure
-figure = Figure(resolution=(1200, 700))
+figure = Figure()
+resize!(figure, 1200, 700)
 canvas1 = new_canvas(renderer, figure[1, 1])
 canvas2 = new_canvas(renderer, figure[1, 2])
 renderer(canvas1, domain, state)

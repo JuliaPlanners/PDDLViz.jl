@@ -148,7 +148,8 @@ Creates a new [`Canvas`](@ref) to be used by `renderer`. An existing `figure`,
 `axis`, or `gridpos` can be specified to use as the base for the new canvas.
 """
 function new_canvas(renderer::Renderer)
-    figure = Figure(resolution=(800, 800))
+    figure = Figure()
+    resize!(figure.scene, (800, 800))
     axis = Axis(figure[1, 1])
     return Canvas(figure, axis)
 end

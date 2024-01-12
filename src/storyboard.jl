@@ -85,7 +85,8 @@ function render_storyboard(
     # Create figure with subplots for each frame
     width = round(Int, size(frames[1])[1] * n_cols * figscale)
     height = round(Int, size(frames[1])[2] * n_rows * figscale)
-    figure = Figure(resolution=(width, height))
+    figure = Figure()
+    resize!(figure.scene, (width, height))
     for (i, frame) in enumerate(frames)
         i_row = ceil(Int, i / n_cols)
         i_col = i - (i_row - 1) * n_cols
