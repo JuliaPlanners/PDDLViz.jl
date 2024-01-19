@@ -125,24 +125,28 @@ function anim_transition!(
         node_pos = node_pos + node_diffs
         stop_early && break 
     end
-    # Compute total number of frames
+    # Compute number of frames per direction
     move_speed = get(options, :move_speed, nothing)
+    n_dirs = length(diffs_per_dir)
     if move_speed === nothing
         frames_per_step = get(options, :frames_per_step, 24)
+        frames_per_dir = fill(frames_per_step ÷ n_dirs, n_dirs)
+        frames_per_dir[end] += frames_per_step % n_dirs
     else
-        max_dists = map(d -> maximum(GeometryBasics.norm.(d)), diffs_per_dir)
-        total_dist = sum(max_dists)
-        frames_per_step = round(Int, total_dist / move_speed)
+        frames_per_dir = map(diffs_per_dir) do diffs
+            max_dist = maximum(GeometryBasics.norm.(diffs); init=0.0)
+            return round(Int, max_dist / move_speed)
+        end
     end
-    # Compute frames per direction
-    n_dirs = length(diffs_per_dir)
-    frames_per_dir = fill(frames_per_step ÷ n_dirs, n_dirs)
-    frames_per_dir[end] += frames_per_step % n_dirs
     # Iterate over node displacements per direction
     for (node_diffs, frames) in zip(diffs_per_dir, frames_per_dir)
         # Interpolate nodes along direction
         for t in 1:frames
-            node_pos = node_start_pos .+ node_diffs .* t / frames
+            if t == frames
+                node_pos = node_start_pos .+ node_diffs
+            else
+                node_pos = node_start_pos .+ node_diffs .* t / frames
+            end
             canvas.observables[:layout][] = node_pos
             # Run callbacks
             overlay !== nothing && overlay(canvas)
