@@ -47,23 +47,39 @@ function NetworkLayout.layout(
     return spring(adj_matrix)
 end
 
+"""
+    BlocksworldLayout(; kwargs...)
+
+Layout for blocksworld problems. Blocks are stacked bottom-up from a table, 
+except for the block that is currently held by the gripper.
+
+## Keyword Arguments
+- `Ptype = Float64`: Type of coordinates.
+- `n_locs = 3`: Number of locations, including the table, gripper, ceiling,
+    and locations of the base blocks.
+- `block_width = 1.0`: Width of each block.
+- `block_height = 1.0`: Height of each block.
+- `block_gap = 0.5`: Horizontal gap between blocks.
+- `table_height = block_height`: Height of the table.
+- `gripper_height`: Height of the gripper.
+"""
 struct BlocksworldLayout{Ptype} <: AbstractLayout{2, Ptype}
     n_locs::Int
     block_width::Ptype
     block_height::Ptype
     block_gap::Ptype
     table_height::Ptype
-    gripper_height::Ptype
+    gripper_height::Union{Ptype, Nothing}
 end
 
 function BlocksworldLayout(;
     Ptype = Float64,
-    n_locs = 2,
+    n_locs = 3,
     block_width = Ptype(1.0),
     block_height = Ptype(1.0),
     block_gap = Ptype(0.5),
     table_height = block_height,
-    gripper_height = table_height + (n_locs - 2 + 1) * block_height
+    gripper_height = nothing
 )
     return BlocksworldLayout{Ptype}(
         n_locs,
@@ -82,33 +98,56 @@ function NetworkLayout.layout(
     n_blocks = n_nodes - algo.n_locs
     graph = SimpleDiGraph(adj_matrix)
     positions = Vector{Point2{Ptype}}(undef, n_nodes)
-    # Set table and gripper location
+    # Set table location
     x_mid = n_blocks * (algo.block_width + algo.block_gap) / Ptype(2)
-    positions[1] = Point2{Ptype}(x_mid, algo.table_height/2)
-    positions[2] = Point2{Ptype}(x_mid, algo.gripper_height+algo.block_height/2)
+    table_pos = Point2{Ptype}(x_mid, algo.table_height / Ptype(2))
+    positions[1] = table_pos
+    # Set ceiling location
+    ceil_height = algo.table_height + Ptype(n_blocks + 2.5) * algo.block_height
+    if !isnothing(algo.gripper_height)
+        ceil_height = max(ceil_height, algo.gripper_height)
+    end
+    ceil_pos = Point2{Ptype}(x_mid, ceil_height)
+    positions[3] = ceil_pos
     # Compute base locations
     x_start = (algo.block_width + algo.block_gap) / Ptype(2)
-    for i in 1:(algo.n_locs-2)
+    for i in 1:n_blocks
         x = (i - 1) * (algo.block_width + algo.block_gap) + x_start
         y = algo.table_height - algo.block_height / Ptype(2)
-        positions[2 + i] = Point2{Ptype}(x, y)
+        positions[3 + i] = Point2{Ptype}(x, y)
     end
     # Compute block locations for towers rooted at each base
-    for base in 3:algo.n_locs
+    max_tower_height = algo.table_height - algo.block_height / Ptype(2)
+    for base in 4:algo.n_locs
         stack = [(i, base) for i in inneighbors(graph, base)]
         while !isempty(stack)
             (node, parent) = pop!(stack)
             x, y = positions[parent]
             y += algo.block_height
+            max_tower_height = max(y, max_tower_height)
             positions[node] = Point2{Ptype}(x, y)
             for child in inneighbors(graph, node)
                 push!(stack, (child, node))
             end
         end
     end
-    # Compute block locations for blocks held in gripper
+    if isnothing(algo.gripper_height)
+        # Automatically determine gripper height
+        gripper_height = max_tower_height + Ptype(1.5) * algo.block_height
+        if !isempty(inneighbors(graph, 2))
+            gripper_height += algo.block_height
+        end
+        gripper_height = min(gripper_height, ceil_height)
+    else
+        # Set fixed gripper height
+        gripper_height = ceil_height
+    end
+    # Set gripper location
+    gripper_pos = Point2{Ptype}(x_mid, gripper_height)
+    positions[2] = gripper_pos
+    # Set location of held blocks
     for node in inneighbors(graph, 2)
-        positions[node] = copy(positions[2])
+        positions[node] = copy(gripper_pos)
     end
     return positions
 end

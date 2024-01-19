@@ -116,7 +116,7 @@ and tables. The following blocksworld-specific options are supported:
 - `block_gap::Real`: Gap between blocks, defaults to `0.5`
 - `table_height::Real`: Height of table, defaults to `block_height`
 - `gripper_height::Real`: Height of blocks when they are picked up. Defaults 
-    to `table_height + (n_locs - 2 + 1) * block_height`.
+    to slightly above the tallest block tower.
 - `block_colors`: Colorscheme for blocks, defaults to a discretization of the
     `plasma` colorscheme.
 - `block_renderer`: Renderer for blocks, defaults to a colored square with the
@@ -130,9 +130,8 @@ function BlocksworldRenderer(;
     table_height::Real = block_height,
     gripper_height::Union{Real, Nothing} = nothing,
     graph_layout = n_locs -> PDDLViz.BlocksworldLayout(;
-        n_locs, block_width, block_height, block_gap, table_height,
-        gripper_height = isnothing(gripper_height) ? 
-            table_height + (n_locs - 2 + 1) * block_height : gripper_height
+        n_locs, block_width, block_height, block_gap,
+        table_height, gripper_height 
     ),
     block_colors = Makie.colorschemes[:plasma][1:8:256],
     block_renderer = (d, s, obj) -> begin
@@ -167,7 +166,7 @@ function BlocksworldRenderer(;
     is_loc_directed = true,
     is_mov_directed = true,
     has_mov_edges = true,
-    locations = [pddl"(table)", pddl"(gripper)"],
+    locations = [pddl"(table)", pddl"(gripper)", pddl"(ceiling)"],
     location_types = [block_type],
     movable_types = [block_type],
     loc_renderers = Dict{Const, Function}(
@@ -200,7 +199,7 @@ function BlocksworldRenderer(;
             order = [:up, :horizontal, :down],
             stop_early = [true, false, false]
         ),
-        :move_speed => 0.5
+        :move_speed => 0.4
     ),
     kwargs...
 )
