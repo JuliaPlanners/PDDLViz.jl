@@ -44,6 +44,8 @@ $(TYPEDFIELDS)
     inventory_types::Vector{Symbol} = Symbol[]
     "Axis titles / labels for each inventory."
     inventory_labels::Vector{String} = String[]
+    "Inventory label font size."
+    inventory_labelsize::Real = 20
     "Default options for state rendering."
     state_options::Dict{Symbol, Any} =
         default_state_options(GridworldRenderer)

@@ -75,6 +75,7 @@ function render_state!(
     end
     # Render inventories
     if renderer.show_inventory && get(options, :show_inventory, true)
+        inventory_labelsize = renderer.inventory_labelsize
         colsize!(canvas.layout, 1, Auto(1))
         rowsize!(canvas.layout, 1, Auto(1))
         for (i, inventory_fn) in enumerate(renderer.inventory_fns)
@@ -86,7 +87,7 @@ function render_state!(
                 title = get(renderer.inventory_labels, i, "Inventory")
                 _ax = Axis(canvas.layout[i+1, 1], aspect=DataAspect(),
                            title=title, titlealign=:left,
-                           titlefont=:regular, titlesize=20,
+                           titlefont=:regular, titlesize=inventory_labelsize,
                            xzoomlock=true, xpanlock=true, xrectzoom=false,
                            yzoomlock=true, ypanlock=true, yrectzoom=false,
                            xgridstyle=:solid, ygridstyle=:solid,
