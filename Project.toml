@@ -1,7 +1,7 @@
 name = "PDDLViz"
 uuid = "8f72e95f-8ea1-4af3-8b89-086f52abff52"
 authors = ["Xuan <tanqazx@gmail.com> and contributors"]
-version = "0.1.10"
+version = "0.1.11"
 
 [deps]
 Base64 = "2a0f44e3-6c83-55bd-87e4-b1978d98bd5f"
