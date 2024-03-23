@@ -36,18 +36,24 @@ function render_sol!(
             for (ls, ds) in zip(obj_locs, obj_dirs)
                 empty!(ls[]); empty!(ds[])
             end
-            # Determine node iteration order
-            has_order = !isempty(sol.search_order)
-            node_ids = has_order ? sol.search_order : keys(sol.search_tree)
-            if has_order
-                push!(node_ids, hash(sol.trajectory[end]))
+            # Determine node expansion order
+            if !isnothing(sol.search_order)
+                node_ids = sol.search_order
+            elseif keytype(sol.search_tree) == keytype(sol.search_frontier)
+                node_ids = keys(sol.search_frontier)
+                setdiff!(node_ids, keys(sol.search_frontier))
+                node_ids = collect(node_ids)
+            elseif keytype(sol.search_tree) == eltype(sol.search_frontier)
+                node_ids = collect(keys(sol.search_tree))
+                setdiff!(node_ids, sol.search_frontier)
             end
+            push!(node_ids, hash(sol.trajectory[end]))
             # Iterate over nodes in search tree (in order if available)
             for id in node_ids
                 node = sol.search_tree[id]
                 cur_state = node.state
-                prev_state = isnothing(node.parent_id) ? 
-                    cur_state : sol.search_tree[node.parent_id].state
+                prev_state = isnothing(node.parent) ? 
+                    cur_state : sol.search_tree[node.parent.id].state
                 height = size(node.state[renderer.grid_fluents[1]], 1)
                 # Update agent observables
                 if renderer.has_agent
