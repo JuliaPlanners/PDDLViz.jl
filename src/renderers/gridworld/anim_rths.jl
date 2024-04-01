@@ -1,6 +1,6 @@
 function (cb::AnimSolveCallback{GridworldRenderer})(
-    planner::RealTimeHeuristicSearch,
-    sol::PolicySolution, init_state::State, cur_state::State,
+    planner::RealTimeHeuristicSearch, sol::ReusableTreePolicy,
+    init_state::Union{Nothing, State}, cur_state::State,
     n::Int, act, cur_v, best_act
 )
     renderer, canvas, domain = cb.renderer, cb.canvas, cb.domain
@@ -8,11 +8,6 @@ function (cb::AnimSolveCallback{GridworldRenderer})(
         merge(renderer.trajectory_options, cb.options)
     # Determine grid height
     height = size(cur_state[renderer.grid_fluents[1]], 1)
-    # Advance to next state if current action is nothing
-    if isnothing(act)
-        cur_state = isnothing(best_act) ? 
-            init_state : PDDL.transition(domain, cur_state, best_act)
-    end
     # Extract agent observables
     Point2fVecObservable() = Observable(Point2f[])
     if renderer.has_agent
@@ -24,6 +19,9 @@ function (cb::AnimSolveCallback{GridworldRenderer})(
             get!(Point2fVecObservable, canvas.observables, :search_agent_locs)
         search_agent_dirs =
             get!(Point2fVecObservable, canvas.observables, :search_agent_dirs)
+    else
+        search_agent_locs = nothing
+        search_agent_dirs = nothing
     end
     # Extract object observables
     objects = get(options, :tracked_objects, Const[])
@@ -72,16 +70,27 @@ function (cb::AnimSolveCallback{GridworldRenderer})(
     for (obj, loc) in zip(objects, obj_locs)
         loc[] = Point2f(gw_obj_loc(renderer, cur_state, obj, height))
     end
-    # Reset search locations if iteration has completed
+    # Reset/rebuild search locations if iteration has completed
     if isnothing(act)
         if renderer.has_agent
             empty!(search_agent_locs[])
             empty!(search_agent_dirs[])
-            notify(search_agent_locs)
         end
         for (ls, ds) in zip(search_obj_locs, search_obj_dirs)
             empty!(ls[])
             empty!(ds[])
+        end
+        node_id = isempty(sol.search_sol.trajectory) ?
+            nothing : hash(sol.search_sol.trajectory[end])
+        _rebuild_tree!(
+            canvas, renderer, sol.search_sol, node_id;
+            agent_locs = search_agent_locs, agent_dirs = search_agent_dirs,
+            obj_locs = search_obj_locs, obj_dirs = search_obj_dirs, objects
+        )
+        if renderer.has_agent
+            notify(search_agent_locs)
+        end
+        for ls in search_obj_locs
             notify(ls)
         end
     end

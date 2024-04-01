@@ -10,10 +10,7 @@ using OrderedCollections
 using DocStringExtensions
 using Printf
 
-const MaybeObservable{T} = Union{Observable{T}, T}
-maybe_observe(x::Observable) = x
-maybe_observe(x) = Observable(x)
-
+include("utils.jl")
 include("graphics/graphics.jl")
 include("interface.jl")
 include("render.jl")
