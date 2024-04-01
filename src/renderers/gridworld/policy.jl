@@ -1,3 +1,6 @@
+using SymbolicPlanners:
+    get_value, has_cached_value, get_action, best_action
+
 function render_sol!(
     canvas::Canvas, renderer::GridworldRenderer, domain::Domain,
     state::Observable, sol::Observable{<:PolicySolution};
@@ -31,6 +34,7 @@ function render_sol!(
     obj_locs = [Observable(Point2f[]) for _ in 1:length(objects)]
     obj_values = [Observable(Float64[]) for _ in 1:length(objects)]
     # Update observables for reachable states
+    show_cached_only = get(options, :show_cached_only, false)
     onany(sol, state) do sol, init_state
         # Update agent observables
         if renderer.has_agent
@@ -47,23 +51,31 @@ function render_sol!(
                 state_id = hash(state)
                 state_id in visited && continue
                 push!(visited, state_id)
-                # Get state value and best action
-                val = SymbolicPlanners.get_value(sol, state)
-                best_act = SymbolicPlanners.best_action(sol, state)
                 # Get agent location
                 height = size(state[renderer.grid_fluents[1]], 1)
                 loc = Point2f(gw_agent_loc(renderer, state, height))
-                # Terminate if location has already been encountered
-                loc in agent_locs[] && continue
+                loc_exists = loc in agent_locs[]
+                if show_cached_only && state != init_state
+                    # Terminate if state has no cached value
+                    !has_cached_value(sol, state) && continue
+                else
+                    # Terminate if location has already been encountered
+                    loc_exists && continue
+                end
+                # Get state value and best action
+                val = get_value(sol, state)
+                best_act = best_action(sol, state)
                 # Append agent location and value, etc.
-                push!(agent_locs[], loc)
                 next_state = transition(domain, state, best_act)
-                next_loc = Point2f(gw_agent_loc(renderer, next_state, height))
-                marker = loc == next_loc ? stopmarker : arrowmarker
-                push!(agent_markers[], marker)
-                rotation = atan(next_loc[2] - loc[2], next_loc[1] - loc[1])
-                push!(agent_rotations[], rotation)
-                push!(agent_values[], val)
+                if !loc_exists # Skip if location already exists
+                    push!(agent_locs[], loc)
+                    next_loc = Point2f(gw_agent_loc(renderer, next_state, height))
+                    marker = loc == next_loc ? stopmarker : arrowmarker
+                    push!(agent_markers[], marker)
+                    rotation = atan(next_loc[2] - loc[2], next_loc[1] - loc[1])
+                    push!(agent_rotations[], rotation)
+                    push!(agent_values[], val)
+                end
                 # Add next states to queue
                 push!(queue, next_state)
                 for act in available(domain, state)
@@ -83,15 +95,18 @@ function render_sol!(
             empty!(locs[])
             empty!(vals[])
             # Add initial location and value
-            push!(locs[], Point2f(gw_obj_loc(renderer, init_state, obj)))
-            push!(vals[], SymbolicPlanners.get_value(sol, init_state))
+            if show_cached_only && has_cached_value(sol, init_state)
+                push!(locs[], Point2f(gw_obj_loc(renderer, init_state, obj)))
+                push!(vals[], get_value(sol, init_state))
+            end
             # Add locations and values of neighboring states
             for act in available(domain, init_state)
                 next_state = transition(domain, init_state, act)
+                show_cached_only && !has_cached_value(sol, next_state) && continue
                 next_loc = Point2f(gw_obj_loc(renderer, next_state, obj))
                 next_loc in locs[] && continue
                 push!(locs[], next_loc)
-                push!(vals[], SymbolicPlanners.get_value(sol, next_state))
+                push!(vals[], get_value(sol, next_state))
             end
             # Trigger updates
             notify(locs)
