@@ -6,6 +6,31 @@ function render_sol!(
     state::Observable, sol::Observable{<:PolicySolution};
     options...
 )
+    render_policy_heatmap!(canvas, renderer, domain, state, sol; options...)
+    return canvas
+end
+
+function render_sol!(
+    canvas::Canvas, renderer::GridworldRenderer, domain::Domain,
+    state::Observable, sol::Observable{<:ReusableTreePolicy};
+    options...
+)
+    # Render heatmap
+    render_policy_heatmap!(canvas, renderer, domain, state, sol; options...)
+    # Render search tree  
+    if get(options, :show_search, true)
+        search_sol = @lift($sol.search_sol)
+        render_sol!(canvas, renderer, domain, state, search_sol;
+                    show_search=true, options...)
+    end
+    return canvas
+end
+
+function render_policy_heatmap!(
+    canvas::Canvas, renderer::GridworldRenderer, domain::Domain,
+    state::Observable, sol::Observable{<:PolicySolution};
+    options...
+)
     # Render initial state if not already on canvas
     if canvas.state === nothing
         render_state!(canvas, renderer, domain, state; options...)
