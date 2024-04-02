@@ -1,6 +1,6 @@
 function (cb::AnimSolveCallback{GridworldRenderer})(
     planner::Union{ForwardPlanner, BreadthFirstPlanner},
-    sol::PathSearchSolution, node_id::Union{Nothing, UInt}, priority
+    sol::PathSearchSolution, node_id::Union{UInt, Nothing}, priority
 )
     renderer, canvas, domain = cb.renderer, cb.canvas, cb.domain
     options = isempty(cb.options) ?  renderer.trajectory_options :
@@ -133,7 +133,7 @@ function _rebuild_tree!(
     # Iterate over nodes in search tree (in order if available)
     for id in node_ids
         _add_node_to_tree!(canvas, renderer, sol, id;
-                           agent_locs, agent_dirs, obj_locs, obj_dirs)
+                           agent_locs, agent_dirs, objects, obj_locs, obj_dirs)
     end
     return nothing
 end

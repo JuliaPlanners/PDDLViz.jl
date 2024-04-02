@@ -1,11 +1,12 @@
 function (cb::AnimSolveCallback{GridworldRenderer})(
     planner::RealTimeHeuristicSearch, sol::ReusableTreePolicy,
-    init_state::Union{Nothing, State}, cur_state::State,
+    init_state::Union{State, Nothing}, cur_state::State,
     n::Int, act, cur_v, best_act
 )
     renderer, canvas, domain = cb.renderer, cb.canvas, cb.domain
     options = isempty(cb.options) ?  renderer.trajectory_options :
         merge(renderer.trajectory_options, cb.options)
+    options[:show_search] = false
     # Determine grid height
     height = size(cur_state[renderer.grid_fluents[1]], 1)
     # Extract agent observables
