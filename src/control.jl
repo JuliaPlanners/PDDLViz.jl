@@ -63,7 +63,7 @@ $(FIELDS)
     "Keys mapped to remaining available actions (default: number keys)."
     extrakeys::Vector{Keyboard.Button} = Keyboard.Button.(collect(49:57))
     "Function `(state, acts) -> acts` that filters/processes remaining actions."
-    extraprocess::T = _default_extraprocess
+    extraprocess::T = nothing
     "Restart button if an initial state is specified."
     restart_key::Keyboard.Button = Keyboard.backspace
     "Whether an action is executed only if no other keys are pressed."
@@ -72,7 +72,6 @@ $(FIELDS)
     callback::U = nothing
     obsfunc::Ref{ObserverFunction} = Ref{ObserverFunction}()
 end
-
 
 function KeyboardController(
     args::Union{Pair{Keyboard.Button, <:Term}, Keyboard.Button}...;
@@ -88,13 +87,11 @@ function KeyboardController(
         end
     end
     if isempty(extrakeys)
-        return KeyboardController(keymap=keymap, kwargs...)
+        return KeyboardController(;keymap=keymap, kwargs...)
     else
-        return KeyboardController(keymap=keymap, extrakeys=extrakeys, kwargs...)
+        return KeyboardController(;keymap=keymap, extrakeys=extrakeys, kwargs...)
     end
 end
-
-_default_extraprocess(state, acts) = sort!(acts, by=string)
 
 function add_controller!(
     canvas::Canvas, controller::KeyboardController,
@@ -133,7 +130,11 @@ function add_controller!(
         end
         # Filter and sort remaining available actions
         actions = filter!(a -> !(a in values(controller.keymap)), actions)
-        actions = controller.extraprocess(state, actions)
+        if !isnothing(controller.extraprocess)
+            actions = controller.extraprocess(state, actions)
+        else
+            sort!(actions, by=string)
+        end
         # Take first action that matches an extra key
         for (i, key) in enumerate(controller.extrakeys)
             key = controller.exclusive ? Exclusively(key) : key
@@ -169,8 +170,6 @@ function render_controls!(
     append!(buttons, controller.extrakeys)
     append!(labels, fill(' '^40, length(controller.extrakeys)))
     markers = _keyboard_button_marker.(buttons)
-
-
     entries = [LegendEntry(m, Attributes(label=l, labelcolor=:black))
                for (l, m) in zip(labels, markers)]
     entrygroups = Observable(Makie.EntryGroup[("Controls", entries)])
@@ -214,7 +213,11 @@ function render_controls!(
         end
         # Filter and sort remaining available actions
         actions = filter!(a -> !(a in values(controller.keymap)), actions)
-        actions = controller.extraprocess(state, actions)
+        if !isnothing(controller.extraprocess)
+            actions = controller.extraprocess(state, actions)
+        else
+            sort!(actions, by=string)
+        end
         for (i, key) in enumerate(controller.extrakeys)
             if i <= length(actions)
                 act = actions[i]
