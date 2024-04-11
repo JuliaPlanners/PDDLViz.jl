@@ -10,7 +10,6 @@ function (cb::AnimSolveCallback{GridworldRenderer})(
     prev_state = state
     height = size(state[renderer.grid_fluents[1]], 1)
     # Extract agent observables
-    Point2fVecObservable() = Observable(Point2f[])
     if renderer.has_agent
         agent_locs = get!(Point2fVecObservable,
                           canvas.observables, :rtdp_agent_locs)

@@ -49,13 +49,24 @@ canvas = renderer(domain, trajectory)
 astar = AStarPlanner(GoalCountHeuristic(), save_search=true,
                      save_search_order=true, max_nodes=100)
 sol = astar(domain, state, pddl"(has gem2)")
-canvas = renderer(domain, state, sol)
+canvas = renderer(domain, state, sol, show_search=true)
 
 # Render policy solution
 heuristic = PlannerHeuristic(AStarPlanner(GoalCountHeuristic(), max_nodes=20))
 rtdp = RTDP(heuristic=heuristic, n_rollouts=5, max_depth=20)
 policy = rtdp(domain, state, pddl"(has gem1)")
 canvas = renderer(domain, state, policy)
+
+# Render reusable tree policy
+heuristic = GoalCountHeuristic()
+rths = RTHS(heuristic=heuristic, n_iters=1, max_nodes=20)
+policy = rths(domain, state, pddl"(has gem1)")
+canvas = renderer(domain, state, policy, show_goal_tree=false)
+new_state = copy(state)
+new_state[pddl"(xpos)"] = 4
+new_state[pddl"(ypos)"] = 4
+policy = refine!(policy, rths, domain, new_state, pddl"(has gem1)")
+canvas = renderer(domain, new_state, policy, show_goal_tree=true)
 
 # Animate plan
 plan = collect(sol)
@@ -75,7 +86,7 @@ sol_anim, sol = anim_solve!(canvas, renderer, rtdp,
 save("doors_keys_gems_rtdp.mp4", sol_anim)
 
 # Animate RTHS planning
-rths = RTHS(GoalCountHeuristic(), n_iters=5, max_nodes=15)
+rths = RTHS(GoalCountHeuristic(), n_iters=5, max_nodes=15, reuse_paths=false)
 canvas = renderer(domain, state)
 sol_anim, sol = anim_solve!(canvas, renderer, rths,
                             domain, state, pddl"(has gem1)")

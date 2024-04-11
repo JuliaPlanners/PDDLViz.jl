@@ -23,6 +23,10 @@ function render_sol!(
         render_sol!(canvas, renderer, domain, state, search_sol;
                     show_search=true, options...)
     end
+    # Render reusable tree of paths to the goal
+    if get(options, :show_goal_tree, false)
+        render_goal_tree!(canvas, renderer, domain, state, sol; options...)
+    end
     return canvas
 end
 
@@ -198,7 +202,7 @@ function render_policy_heatmap!(
     return canvas
 end
 
-function _policy_heatmap_marker(n::Int = 1, i::Int = 1)
+@inline function _policy_heatmap_marker(n::Int = 1, i::Int = 1)
     if n <= 1 # Square marker for single agent
         return Polygon(Point2f.([(-.5, -.5), (-.5, .5), (.5, .5), (.5, -.5)]))
     elseif n <= 2 # Bottom left and top right triangles for 2 agents
@@ -225,7 +229,7 @@ function _policy_heatmap_marker(n::Int = 1, i::Int = 1)
     end 
 end
 
-function _policy_label_offset(n::Int=1, i::Int=1)
+@inline function _policy_label_offset(n::Int=1, i::Int=1)
     if n <= 1
         return Point2f(0.0, 0.25)
     elseif n <= 2
@@ -249,4 +253,86 @@ function _policy_label_offset(n::Int=1, i::Int=1)
         x, y = 2/n*cos(angle), 2/n*sin(angle)
         return Point2f(x, y)
     end
+end
+
+function render_goal_tree!(
+    canvas::Canvas, renderer::GridworldRenderer, domain::Domain,
+    state::Observable, sol::Observable{<:ReusableTreePolicy};
+    options...
+)
+    # Extract main axis
+    ax = canvas.blocks[1]
+    # Set up observables for agent
+    if renderer.has_agent
+        agent_locs = Observable(Point2f[])
+        agent_dirs = Observable(Point2f[])
+    else
+        agent_locs = nothing
+        agent_dirs = nothing
+    end
+    # Set up observables for tracked objects
+    objects = get(options, :tracked_objects, Const[])
+    types = get(options, :tracked_types, Symbol[])
+    for ty in types
+        objs = PDDL.get_objects(domain, state, ty)
+        append!(objects, objs)
+    end
+    obj_locs = [Observable(Point2f[]) for _ in 1:length(objects)]
+    obj_dirs = [Observable(Point2f[]) for _ in 1:length(objects)]
+    # Update observables
+    on(sol; update = true) do sol
+        # Rebuild observables for reusable tree
+        node_ids = collect(keys(sol.goal_tree))
+        _build_tree!(agent_locs, agent_dirs, objects, obj_locs, obj_dirs,
+                     renderer, sol.goal_tree, node_ids)
+        # Add current state to tree only if goal tree is empty
+        if isempty(node_ids)
+            _add_node_to_tree!(agent_locs, agent_dirs,
+                               objects, obj_locs, obj_dirs, renderer, state[])
+        end
+        # Trigger updates
+        if renderer.has_agent
+            notify(agent_locs); notify(agent_dirs)
+        end
+        for (ls, ds) in zip(obj_locs, obj_dirs)
+            notify(ls); notify(ds)
+        end
+    end
+    # Create arrow plots for agent and tracked objects
+    node_marker = get(options, :goal_tree_marker, '⦿') 
+    node_size = get(options, :goal_tree_size, 0.3)
+    edge_arrow = get(options, :goal_tree_arrow, '◁')
+    color = get(options, :goal_tree_color, to_color_obs(:black))
+    if renderer.has_agent
+        canvas.plots[:agent_goal_tree_nodes] = arrows!(
+            ax, agent_locs, agent_dirs, color=color,
+            arrowsize=node_size, arrowhead=node_marker,
+            markerspace=:data, align=:head
+        )
+        edge_locs = @lift $agent_locs .- ($agent_dirs .* 0.5)
+        edge_rotations = @lift [atan(d[2], d[1]) for d in $agent_dirs]
+        edge_markers = @lift map($agent_dirs) do d
+            d == Point2f(0, 0) ? node_marker : edge_arrow
+        end
+        canvas.plots[:agent_goal_tree_arrows] = scatter!(
+            ax, edge_locs, rotation=edge_rotations, color=color,
+            marker=edge_markers, markersize=node_size, markerspace=:data,
+        )
+    end
+    for (obj, ls, ds) in zip(objects, obj_locs, obj_dirs)
+        canvas.plots[Symbol("$(obj)_goal_tree_nodes")] = arrows!(
+            ax, ls, ds, color=color, markerspace=:data,
+            arrowsize=node_size, arrowhead=node_marker, align=:head
+        )
+        e_ls = @lift $ls .- ($ds .* 0.5)
+        e_rs = @lift [atan(d[2], d[1]) for d in $ds]
+        e_ms = @lift map($ds) do d
+            d == Point2f(0, 0) ? node_marker : edge_arrow
+        end
+        canvas.plots[Symbol("$(obj)_goal_tree_arrows")] = scatter!(
+            ax, e_ls, rotation=e_rs, marker=e_ms, markersize=node_size,
+            markerspace=:data, color=color
+        )
+    end
+    return canvas
 end

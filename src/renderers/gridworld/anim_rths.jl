@@ -4,13 +4,14 @@ function (cb::AnimSolveCallback{GridworldRenderer})(
     n::Int, act, cur_v, best_act
 )
     renderer, canvas, domain = cb.renderer, cb.canvas, cb.domain
-    options = isempty(cb.options) ?  renderer.trajectory_options :
-        merge(renderer.trajectory_options, cb.options)
+    options = merge(renderer.trajectory_options, cb.options)
     options[:show_search] = false
+    if planner.reuse_paths
+        options[:show_goal_tree] = get(options, :show_goal_tree, true)
+    end
     # Determine grid height
     height = size(cur_state[renderer.grid_fluents[1]], 1)
     # Extract agent observables
-    Point2fVecObservable() = Observable(Point2f[])
     if renderer.has_agent
         agent_loc = get!(canvas.observables, :rths_agent_loc) do
             Observable(Point2f(gw_agent_loc(renderer, cur_state, height)))
@@ -73,20 +74,12 @@ function (cb::AnimSolveCallback{GridworldRenderer})(
     end
     # Reset/rebuild search locations if iteration has completed
     if isnothing(act)
-        if renderer.has_agent
-            empty!(search_agent_locs[])
-            empty!(search_agent_dirs[])
-        end
-        for (ls, ds) in zip(search_obj_locs, search_obj_dirs)
-            empty!(ls[])
-            empty!(ds[])
-        end
         node_id = isempty(sol.search_sol.trajectory) ?
             nothing : hash(sol.search_sol.trajectory[end])
-        _rebuild_tree!(
-            canvas, renderer, sol.search_sol, node_id;
-            agent_locs = search_agent_locs, agent_dirs = search_agent_dirs,
-            obj_locs = search_obj_locs, obj_dirs = search_obj_dirs, objects
+        _build_tree!(
+            search_agent_locs, search_agent_dirs,
+            objects, search_obj_locs, search_obj_dirs,
+            renderer, sol.search_sol, node_id
         )
         if renderer.has_agent
             notify(search_agent_locs)

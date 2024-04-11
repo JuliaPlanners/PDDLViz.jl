@@ -1,3 +1,5 @@
+using SymbolicPlanners: PathNode
+
 function render_sol!(
     canvas::Canvas, renderer::GridworldRenderer, domain::Domain,
     state::Observable, sol::Observable{<:PathSearchSolution};
@@ -17,6 +19,9 @@ function render_sol!(
         if renderer.has_agent
             agent_locs = Observable(Point2f[])
             agent_dirs = Observable(Point2f[])
+        else
+            agent_locs = nothing
+            agent_dirs = nothing
         end
         # Set up observables for tracked objects
         objects = get(options, :tracked_objects, Const[])
@@ -27,49 +32,13 @@ function render_sol!(
         end
         obj_locs = [Observable(Point2f[]) for _ in 1:length(objects)]
         obj_dirs = [Observable(Point2f[]) for _ in 1:length(objects)]
-        # Fill observables
+        # Update observables
         on(sol; update = true) do sol
-            # Clear previous values
-            if renderer.has_agent
-                empty!(agent_locs[]); empty!(agent_dirs[])
-            end
-            for (ls, ds) in zip(obj_locs, obj_dirs)
-                empty!(ls[]); empty!(ds[])
-            end
-            # Determine node expansion order
-            if !isnothing(sol.search_order)
-                node_ids = sol.search_order
-            elseif keytype(sol.search_tree) == keytype(sol.search_frontier)
-                node_ids = keys(sol.search_frontier)
-                setdiff!(node_ids, keys(sol.search_frontier))
-                node_ids = collect(node_ids)
-            elseif keytype(sol.search_tree) == eltype(sol.search_frontier)
-                node_ids = collect(keys(sol.search_tree))
-                setdiff!(node_ids, sol.search_frontier)
-            end
-            push!(node_ids, hash(sol.trajectory[end]))
-            # Iterate over nodes in search tree (in order if available)
-            for id in node_ids
-                node = sol.search_tree[id]
-                cur_state = node.state
-                prev_state = isnothing(node.parent) ? 
-                    cur_state : sol.search_tree[node.parent.id].state
-                height = size(node.state[renderer.grid_fluents[1]], 1)
-                # Update agent observables
-                if renderer.has_agent
-                    loc = gw_agent_loc(renderer, cur_state, height)
-                    prev_loc = gw_agent_loc(renderer, prev_state, height)
-                    push!(agent_locs[], loc)
-                    push!(agent_dirs[], loc .- prev_loc)
-                end
-                # Update object observables
-                for (i, obj) in enumerate(objects)
-                    loc = gw_obj_loc(renderer, cur_state, obj, height)
-                    prev_loc = gw_obj_loc(renderer, prev_state, obj, height)
-                    push!(obj_locs[i][], loc)
-                    push!(obj_dirs[i][], loc .- prev_loc)
-                end
-            end
+            # Rebuild observables for search tree
+            node_id = isempty(sol.trajectory) ?
+                nothing : hash(sol.trajectory[end])
+            _build_tree!(agent_locs, agent_dirs, objects, obj_locs, obj_dirs,
+                         renderer, sol, node_id)
             # Trigger updates
             if renderer.has_agent
                 notify(agent_locs); notify(agent_dirs)
@@ -124,4 +93,101 @@ function render_sol!(
         render_trajectory!(canvas, renderer, domain, trajectory; options...)
     end
     return canvas
+end
+
+@inline function _build_tree!(
+    agent_locs, agent_dirs, objects, obj_locs, obj_dirs,
+    renderer::Renderer,
+    sol::PathSearchSolution,
+    node_id::Union{Nothing, UInt} = nothing;
+)
+    # Determine node expansion order
+    if !isnothing(sol.search_order)
+        node_ids = sol.status == :in_progress ? 
+            sol.search_order : copy(sol.search_order)
+    elseif keytype(sol.search_tree) == keytype(sol.search_frontier)
+        node_ids = keys(sol.search_frontier)
+        setdiff!(node_ids, keys(sol.search_frontier))
+        node_ids = collect(node_ids)
+    elseif keytype(sol.search_tree) == eltype(sol.search_frontier)
+        node_ids = keys(sol.search_tree)
+        setdiff!(node_ids, sol.search_frontier)
+        node_ids = collect(node_ids)
+    end
+    if sol.status != :in_progress && !isnothing(node_id)
+        push!(node_ids, node_id)
+    end
+    # Add nodes to tree in order
+    _build_tree!(agent_locs, agent_dirs, objects, obj_locs, obj_dirs,
+                 renderer, sol.search_tree, node_ids)
+    return nothing
+end
+
+@inline function _build_tree!(
+    agent_locs, agent_dirs, objects, obj_locs, obj_dirs,
+    renderer::Renderer,
+    search_tree::Dict{UInt,<:PathNode},
+    node_ids::Vector{UInt}
+)
+    # Empty existing observables
+    if renderer.has_agent
+        empty!(agent_locs[])
+        empty!(agent_dirs[])
+    end
+    for i in eachindex(objects)
+        empty!(obj_locs[i][])
+        empty!(obj_dirs[i][])
+    end
+    # Iterate over nodes in search tree (in order if available)
+    for id in node_ids
+        _add_node_to_tree!(agent_locs, agent_dirs, objects, obj_locs, obj_dirs,
+                           renderer, search_tree, id)
+    end
+    return nothing
+end
+
+@inline function _add_node_to_tree!(
+    agent_locs, agent_dirs, objects, obj_locs, obj_dirs,
+    renderer::Renderer, sol::PathSearchSolution, node_id::UInt
+)
+    _add_node_to_tree!(agent_locs, agent_dirs, objects, obj_locs, obj_dirs,
+                       renderer, sol.search_tree, node_id)
+    return nothing
+end
+
+@inline function _add_node_to_tree!(
+    agent_locs, agent_dirs, objects, obj_locs, obj_dirs,
+    renderer::Renderer, search_tree::Dict{UInt,<:PathNode}, node_id::UInt
+)
+    # Extract current and previous states
+    node = search_tree[node_id]
+    state = node.state
+    prev_state = isnothing(node.parent) ?
+        state : search_tree[node.parent.id].state
+    # Update agent observables with current node
+    _add_node_to_tree!(agent_locs, agent_dirs, objects, obj_locs, obj_dirs,
+                       renderer, state, prev_state)
+    return nothing
+end
+
+@inline function _add_node_to_tree!(
+    agent_locs, agent_dirs, objects, obj_locs, obj_dirs,
+    renderer::Renderer, state::State, prev_state::State = state
+)
+    height = size(state[renderer.grid_fluents[1]], 1)
+    # Update agent observables with current node
+    if renderer.has_agent
+        loc = gw_agent_loc(renderer, state, height)
+        prev_loc = gw_agent_loc(renderer, prev_state, height)
+        push!(agent_locs[], loc)
+        push!(agent_dirs[], loc .- prev_loc)
+    end
+    # Update object observables with current node
+    for (i, obj) in enumerate(objects)
+        loc = gw_obj_loc(renderer, state, obj, height)
+        prev_loc = gw_obj_loc(renderer, prev_state, obj, height)
+        push!(obj_locs[i][], loc)
+        push!(obj_dirs[i][], loc .- prev_loc)
+    end
+    return nothing
 end
