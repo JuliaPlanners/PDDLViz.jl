@@ -1,5 +1,6 @@
 export Controller, KeyboardController
 export add_controller!, remove_controller!, render_controls!
+export ControlRecorder
 
 import Makie: ObserverFunction
 
@@ -51,7 +52,8 @@ render_controls!(canvas::Canvas, controller::Controller, domain::Domain) =
         exclusive=true, callback=nothing
     )
 
-A controller that maps keyboard input to PDDL actions.
+A controller that maps keyboard input to PDDL actions. Set `callback` to a
+[`ControlRecorder`](@ref) to record actions.
 
 # Options
 
@@ -261,4 +263,30 @@ function _keyboard_button_marker(button::Keyboard.Button)
     box = MarkerElement(marker=:rect, markersize=30, color=(:white, 0.0),
                         strokewidth=1, strokecolor=:black)
     return [box, key]
+end
+
+
+"""
+    ControlRecorder(record_actions = true, record_states = false)
+
+Callback function for a [`Controller`](@ref) that records actions and states.
+After constructing a `recorder`, the recorded values can be accessed via
+`recorder.actions` and `recorder.states`.
+"""
+struct ControlRecorder <: Function
+    record_actions::Bool
+    record_states::Bool
+    actions::Vector{Term}
+    states::Vector{State}
+end 
+
+function ControlRecorder(record_actions::Bool=true, record_states::Bool=false)
+    return ControlRecorder(record_actions, record_states, Term[], State[])
+end
+
+function (cb::ControlRecorder)(canvas, domain, state, act, next_state)
+    act = isnothing(act) ? PDDL.no_op : act
+    cb.record_actions && push!(cb.actions, act)
+    cb.record_states && push!(cb.states, next_state)
+    return nothing
 end
