@@ -2,6 +2,7 @@ export GemGraphic, LockedDoorGraphic, KeyGraphic
 export BoxGraphic, QuestionBoxGraphic
 export RobotGraphic, HumanGraphic
 export CityGraphic
+export CarrotGraphic, OnionGraphic
 
 """
     GemGraphic(x=0.0, y=0.0, size=1.0, sides=6, aspect=0.75;
@@ -197,3 +198,55 @@ function CityGraphic(
     city = MultiGraphic(block1, block2, block3; kwargs...)
     return scale(city, size)
 end
+
+function CarrotGraphic(
+    x::Real=0.0, y::Real=0.0, size::Real=1.0;
+    body_color=:orange, leaves_color=:green, shadow_color=:black, kwargs...
+)
+    body_color = body_color isa Observable ? to_color_obs(body_color) : to_color(body_color)
+    leaves_color = leaves_color isa Observable ? to_color_obs(leaves_color) : to_color(leaves_color)
+    shadow_color = shadow_color isa Observable ? to_color_obs(shadow_color) : to_color(shadow_color)
+    
+    body = NgonShape(0.0, 0.0, 0.3, 3)
+    leaves1 = NgonShape(-0.1, 0.35, 0.1, 3)
+    leaves2 = NgonShape(0.0, 0.35, 0.1, 3)
+    leaves3 = NgonShape(0.1, 0.35, 0.1, 3)
+    
+    carrot_body = MultiGraphic(body; color=body_color)
+    carrot_leaves = MultiGraphic(leaves1, leaves2, leaves3; color=leaves_color)
+    
+    carrot = MultiGraphic(carrot_body, carrot_leaves)
+    shadow = translate(carrot, 0.025, -0.025)
+    shadow.attributes[:color] = shadow_color
+    
+    graphic = MultiGraphic(shadow, carrot; kwargs...)
+    return scale(translate(graphic, x, y), 0.5 * size)
+end
+
+function OnionGraphic(
+    x::Real=0.0, y::Real=0.0, size::Real=1.0;
+    body_color=:goldenrod, leaves_color=:green, shadow_color=:black, kwargs...
+)
+    body_color = body_color isa Observable ? to_color_obs(body_color) : to_color(body_color)
+    leaves_color = leaves_color isa Observable ? to_color_obs(leaves_color) : to_color(leaves_color)
+    shadow_color = shadow_color isa Observable ? to_color_obs(shadow_color) : to_color(shadow_color)
+    
+    # Onion body as a circle
+    body = CircleShape(0.0, 0.0, 0.3)
+    
+    # Onion leaves as small triangles at the bottom
+    leaves1 = NgonShape(-0.1, -0.35, 0.1, 3)
+    leaves2 = NgonShape(0.0, -0.35, 0.1, 3)
+    leaves3 = NgonShape(0.1, -0.35, 0.1, 3)
+    
+    onion_body = MultiGraphic(body; color=body_color)
+    onion_leaves = MultiGraphic(leaves1, leaves2, leaves3; color=leaves_color)
+    
+    onion = MultiGraphic(onion_body, onion_leaves)
+    shadow = translate(onion, 0.025, -0.025)
+    shadow.attributes[:color] = shadow_color
+    
+    graphic = MultiGraphic(shadow, onion; kwargs...)
+    return scale(translate(graphic, x, y), 0.5 * size)
+end
+

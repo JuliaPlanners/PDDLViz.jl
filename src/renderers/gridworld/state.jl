@@ -138,6 +138,71 @@ function render_state!(
         rowgap!(canvas.layout, 10)
         resize_to_layout!(canvas.figure)
     end
+    # Render vision bar
+    if renderer.show_vision && get(options, :show_vision, true)
+        vision_labelsize = renderer.vision_labelsize
+        colsize!(canvas.layout, 1, Auto(1))
+        rowsize!(canvas.layout, 1, Auto(1))
+        for (i, vision_fn) in enumerate(renderer.vision_fns)
+            # Extract objects
+            ty = get(renderer.vision_types, i, :object)
+            sorted_objs = sort(PDDL.get_objects(domain, state[], ty), by=string)
+            # Extract or construct axis for each vision bar
+            ax_i = get(canvas.blocks, length(renderer.inventory_fns) + i + 1) do
+                title = get(renderer.vision_labels, i, "Vision")
+                _ax = Axis(canvas.layout[length(renderer.inventory_fns) + i + 1, 1], aspect=DataAspect(),
+                           title=title, titlealign=:left,
+                           titlefont=:regular, titlesize=vision_labelsize,
+                           xzoomlock=true, xpanlock=true, xrectzoom=false,
+                           yzoomlock=true, ypanlock=true, yrectzoom=false,
+                           xgridstyle=:solid, ygridstyle=:solid,
+                           xgridcolor=:black, ygridcolor=:black)
+                hidedecorations!(_ax, grid=false)
+                push!(canvas.blocks, _ax)
+                return _ax
+            end
+            # Render vision bar as heatmap
+            vision_size = @lift max(length(sorted_objs), $width)
+            cmap = cgrad([:transparent, :black])
+            heatmap!(ax_i, @lift(zeros($vision_size, 1)),
+                     colormap=cmap, colorrange=(0, 1))
+            map!(w -> (1:w-1) .+ 0.5, ax_i.xticks, vision_size)
+            map!(ax_i.limits, vision_size) do w
+                return ((0.5, w + 0.5), nothing)
+            end
+            ax_i.yticks = [0.5, 1.5]
+            # Compute object locations
+            obj_locs = @lift begin
+                locs = Int[]
+                n = 0
+                for obj in sorted_objs
+                    if vision_fn(domain, $state, obj)
+                        push!(locs, n += 1)
+                    else
+                        push!(locs, -1)
+                    end
+                end
+                return locs
+            end
+            # Render objects in vision bar
+            for (j, obj) in enumerate(sorted_objs)
+                type = PDDL.get_objtype(state[], obj)
+                r = get(renderer.obj_renderers, type, default_obj_renderer)
+                graphic = @lift begin
+                    x = $obj_locs[j]
+                    g = translate(r(domain, $state, obj), x, 1)
+                    g.attributes[:visible] = x > 0
+                    g
+                end
+                graphicplot!(ax_i, graphic)
+            end
+            # Resize row
+            row_height = 1/height[] * width[]/vision_size[]
+            rowsize!(canvas.layout, length(renderer.inventory_fns) + i + 1, Auto(row_height))
+        end
+        rowgap!(canvas.layout, 10)
+        resize_to_layout!(canvas.figure)
+    end
     # Render caption
     if get(options, :caption, nothing) !== nothing
         caption = options[:caption]
@@ -162,6 +227,7 @@ end
 - `show_objects::Bool = true`: Whether to show objects.
 - `show_locations::Bool = true`: Whether to show locations.
 - `show_inventory::Bool = true`: Whether to show inventories.
+- `show_vision::Bool = true`: Whether to show vision bar.
 - `caption = nothing`: Caption to display below the figure.
 - `caption_font = :regular`: Font for the caption.
 - `caption_size = 24`: Font size for the caption.
@@ -175,6 +241,7 @@ default_state_options(R::Type{GridworldRenderer}) = Dict{Symbol,Any}(
     :show_objects => true,
     :show_locations => true,
     :show_inventory => true,
+    :show_vision => true,
     :caption => nothing,
     :caption_font => :regular,
     :caption_size => 24,
