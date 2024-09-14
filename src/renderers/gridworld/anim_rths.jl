@@ -81,13 +81,15 @@ function (cb::AnimSolveCallback{GridworldRenderer})(
             objects, search_obj_locs, search_obj_dirs,
             renderer, sol.search_sol, node_id
         )
-        if renderer.has_agent
+        if renderer.has_agent && !isempty(search_agent_locs[])
             notify(search_agent_locs)
             notify(search_agent_dirs)
         end
         for (ls, ds) in zip(search_obj_locs, search_obj_dirs)
-            notify(ls)
-            notify(ds)
+            if !isempty(ls[])
+                notify(ls)
+                notify(ds)
+            end
         end
     end
     # Render / update value heatmap

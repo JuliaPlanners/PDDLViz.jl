@@ -471,12 +471,12 @@ end
     anim_refine!([path], renderer,
                  sol, planner, domain, state, spec;
                  format="mp4", framerate=30, show=false,
-                 record_init=true, options...)
+                 record_init=true, copy_sol=false, options...)
 
     anim_refine!([anim|path], canvas, renderer,
                  sol, planner, domain, state, spec;
                  format="mp4", framerate=30, show=is_displayed(canvas),
-                 record_init=true, options...)
+                 record_init=true, copy_sol=false, options...)
 
 Uses `renderer` to animate the refinement of an existing solution by a
 SymbolicPlanners.jl `planner` in a PDDL `domain` (updating the `canvas`
@@ -486,7 +486,8 @@ Returns a tuple `(anim, sol)` where `anim` is an [`Animation`](@ref) object
 containing the animation, and `sol` is the solution returned by `planner`. If 
 `anim` is provided as the first argument, then additional frames are added to 
 the animation. Alternatively, if a `path` is provided, the animation is saved
-to that file, and `(path, sol)` is returned.
+to that file, and `(path, sol)` is returned. If `copy_sol` is `true`, then
+a copy of the initial solution is made before refinement.
 
 Note that once an animation is displayed or saved, no frames can be added to it.
 """
@@ -530,7 +531,8 @@ end
 function anim_refine!(
     anim::Animation, canvas::Canvas, renderer::Renderer,
     sol::Solution, planner::Planner, domain::Domain, state::State, spec;
-    show::Bool=is_displayed(canvas), showrate=30, record_init=true, options...
+    show::Bool=is_displayed(canvas), showrate=30, record_init=true,
+    copy_sol::Bool=false, options...
 )
     # Display canvas if `show` is true
     show && !is_displayed(canvas) && display(canvas)
@@ -549,7 +551,8 @@ function anim_refine!(
                                       record_callback; options...)
     # Refine existing solution and return solution with animation
     planner = add_anim_callback(planner, anim_callback)
-    sol = SymbolicPlanners.refine(sol, planner, domain, state, spec)
+    copy_sol && (sol = copy(sol))
+    sol = SymbolicPlanners.refine!(sol, planner, domain, state, spec)
     return (anim, sol)
 end
 
