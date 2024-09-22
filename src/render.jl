@@ -154,3 +154,12 @@ function render_sol!(
     trajectory = @lift PDDL.simulate(domain, $state, collect($sol))
     return render_trajectory!(canvas, renderer, domain, trajectory; options...)
 end
+
+function render_sol!(
+    canvas::Canvas, renderer::Renderer,
+    domain::Domain, state::Observable, sol::Observable{<:MultiSolution};
+    options...
+)
+    sol = @lift $sol.selector($sol.solutions, $state)
+    return render_sol!(canvas, renderer, domain, state, sol; options...)
+end

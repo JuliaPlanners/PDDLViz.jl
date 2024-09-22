@@ -68,6 +68,16 @@ new_state[pddl"(ypos)"] = 4
 policy = refine!(policy, rths, domain, new_state, pddl"(has gem1)")
 canvas = renderer(domain, new_state, policy, show_goal_tree=true)
 
+# Render multi-solution
+rths_bfs = RTHS(GoalCountHeuristic(), h_mult=0.0, max_nodes=10)
+rths_astar = RTHS(GoalCountHeuristic(), h_mult=1.0, max_nodes=20)
+arths = AlternatingRTHS(rths_bfs, rths_astar)
+new_state = copy(state)
+new_state[pddl"(xpos)"] = 4
+new_state[pddl"(ypos)"] = 4
+policy = arths(domain, new_state, pddl"(has gem1)")
+canvas = renderer(domain, new_state, policy, show_goal_tree=false)
+
 # Animate plan
 plan = collect(sol)
 anim = anim_plan(renderer, domain, state, plan; trail_length=10)

@@ -571,3 +571,15 @@ function add_anim_callback(planner::RTHS, cb::AnimSolveCallback)
     planner.planner.callback = cb
     return planner
 end
+
+function add_anim_callback(planner::AlternatingRTHS, cb::AnimSolveCallback)
+    # Set top-level callback
+    planner = copy(planner)
+    planner.callback = cb
+    # Set callback for internal forward-search planner
+    for subplanner in planner.planners
+        subplanner.planner = copy(subplanner.planner)
+        subplanner.planner.callback = cb
+    end
+    return planner
+end
